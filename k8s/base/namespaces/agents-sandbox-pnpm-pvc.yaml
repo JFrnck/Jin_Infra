@@ -1,0 +1,17 @@
+# PVC compartido de pnpm store (Fase 5.5, ADR 0006 punto 4): evita pagar
+# 30-90s de `npm install` en frío por cada pod de servicio. `ReadWriteOnce`
+# normalmente prohíbe montaje multi-pod, pero esa restricción es *entre
+# nodos* — la VM OCI de este proyecto es un único nodo, así que todos los
+# pods de servicio (siempre en el mismo, único nodo) pueden montarlo
+# simultáneamente sin storage RWX (Longhorn/NFS) que no existe hoy.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pnpm-store
+  namespace: agents-sandbox
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
