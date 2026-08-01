@@ -38,7 +38,7 @@ data:
         metrics_path: /metrics
 
       # Pods que se anuncian con la anotación prometheus.io/scrape=true
-      # (yormun-core y executor lo harán desde la Fase 2).
+      # (jin-core y executor lo harán desde la Fase 2).
       - job_name: kubernetes-pods
         kubernetes_sd_configs:
           - role: pod

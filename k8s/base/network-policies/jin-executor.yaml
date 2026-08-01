@@ -1,4 +1,4 @@
-# El Executor solo recibe de yormun (HTTP interno) y sale a: DNS,
+# El Executor solo recibe de jin (HTTP interno) y sale a: DNS,
 # kube-apiserver (vía IP del nodo, fuera de los CIDRs de pods/services)
 # y Modal (internet). No alcanza pods de otros namespaces directamente:
 # todo lo que hace en agents-sandbox pasa por el apiserver.
@@ -6,7 +6,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: default-deny-ingress
-  namespace: yormun-executor
+  namespace: jin-executor
 spec:
   podSelector: {}
   policyTypes:
@@ -15,8 +15,8 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: allow-from-yormun
-  namespace: yormun-executor
+  name: allow-from-jin
+  namespace: jin-executor
 spec:
   podSelector: {}
   policyTypes:
@@ -25,13 +25,13 @@ spec:
     - from:
         - namespaceSelector:
             matchLabels:
-              kubernetes.io/metadata.name: yormun
+              kubernetes.io/metadata.name: jin
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: egress-allowlist
-  namespace: yormun-executor
+  namespace: jin-executor
 spec:
   podSelector: {}
   policyTypes:

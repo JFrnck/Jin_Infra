@@ -1,12 +1,12 @@
-# Backup de memory.db (BLUEPRINT 3.3.1/3.5). Monta yormun-core-data
-# solo-lectura: no requiere que Yormun_Core exista todavía (Fase 4) —
+# Backup de memory.db (BLUEPRINT 3.3.1/3.5). Monta jin-core-data
+# solo-lectura: no requiere que Jin_Core exista todavía (Fase 4) —
 # dump-memory.sh sale OK si el archivo aún no está (ver ese script).
 # Diario 03:20.
 apiVersion: batch/v1
 kind: CronJob
 metadata:
   name: backup-memory
-  namespace: yormun
+  namespace: jin
 spec:
   schedule: "20 3 * * *"
   timeZone: America/Lima
@@ -26,7 +26,7 @@ spec:
             runAsNonRoot: true
           containers:
             - name: backup-memory
-              image: ghcr.io/jfrnck/yormun-backup-tools:v1
+              image: ghcr.io/jfrnck/jin-backup-tools:v1
               command: ["bash", "/scripts/dump-memory.sh"]
               securityContext:
                 allowPrivilegeEscalation: false
@@ -75,5 +75,5 @@ spec:
           volumes:
             - name: core-data
               persistentVolumeClaim:
-                claimName: yormun-core-data
+                claimName: jin-core-data
                 readOnly: true

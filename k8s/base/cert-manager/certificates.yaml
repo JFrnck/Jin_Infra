@@ -1,44 +1,44 @@
 # Certificates wildcard por namespace consumidor: los Secrets TLS solo son
 # visibles en su namespace, así que cada namespace que termina TLS necesita
-# su propio Certificate. yormun.com = núcleo confiable; yormungander.com =
+# su propio Certificate. jeanfranck.com = núcleo confiable; jinserver.com =
 # zona efímera de agentes (BLUEPRINT 5.2 — jamás mezclar contenidos).
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-  name: wildcard-yormun-com
-  namespace: yormun
+  name: wildcard-jeanfranck-com
+  namespace: jin
 spec:
-  secretName: wildcard-yormun-com-tls
+  secretName: wildcard-jeanfranck-com-tls
   issuerRef:
     name: letsencrypt-dns01
     kind: ClusterIssuer
   dnsNames:
-    - "yormun.com"
-    - "*.yormun.com"
+    - "jeanfranck.com"
+    - "*.jeanfranck.com"
 ---
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-  name: wildcard-yormungander-com
-  namespace: yormun
+  name: wildcard-jinserver-com
+  namespace: jin
 spec:
-  secretName: wildcard-yormungander-com-tls
+  secretName: wildcard-jinserver-com-tls
   issuerRef:
     name: letsencrypt-dns01
     kind: ClusterIssuer
   dnsNames:
-    - "yormungander.com"
-    - "*.yormungander.com"
+    - "jinserver.com"
+    - "*.jinserver.com"
 ---
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-  name: wildcard-yormun-com
+  name: wildcard-jeanfranck-com
   namespace: observability
 spec:
-  secretName: wildcard-yormun-com-tls
+  secretName: wildcard-jeanfranck-com-tls
   issuerRef:
     name: letsencrypt-dns01
     kind: ClusterIssuer
   dnsNames:
-    - "*.yormun.com"
+    - "*.jeanfranck.com"

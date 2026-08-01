@@ -1,18 +1,18 @@
-# Volumen donde Yormun_Core (Fase 2/4) escribirá memory.db (BLUEPRINT 3.3.1:
-# "archivo único memory.db en el PersistentVolume de yormun-core"). Se
+# Volumen donde Jin_Core (Fase 2/4) escribirá memory.db (BLUEPRINT 3.3.1:
+# "archivo único memory.db en el PersistentVolume de jin-core"). Se
 # declara ahora, antes de que exista el Deployment de core, para que:
 #   a) dump-memory.sh (Fase 1.2) pueda montarlo solo-lectura sin esperar
 #      a la Fase 4.
-#   b) el futuro Deployment de yormun-core sepa exactamente qué PVC y ruta
+#   b) el futuro Deployment de jin-core sepa exactamente qué PVC y ruta
 #      usar: monta este mismo PVC en /data/memory (contrato con el módulo
-#      src/memory/ — ver Yormun_Docs/docs/PROMPTS.md Fase 4.3).
+#      src/memory/ — ver Jin_Docs/docs/PROMPTS.md Fase 4.3).
 # RWO de sobra en un clúster de un solo nodo: el CronJob de backup y el
 # futuro pod de core pueden montarlo simultáneamente (mismo nodo).
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: yormun-core-data
-  namespace: yormun
+  name: jin-core-data
+  namespace: jin
 spec:
   accessModes:
     - ReadWriteOnce

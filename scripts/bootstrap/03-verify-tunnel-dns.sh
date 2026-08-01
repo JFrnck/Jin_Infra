@@ -5,7 +5,7 @@
 # requiere sesión interactiva en Zero Trust.
 set -euo pipefail
 
-DOMAINS=(yormun.com yormungander.com)
+DOMAINS=(jeanfranck.com jinserver.com)
 fail=0
 
 for domain in "${DOMAINS[@]}"; do
@@ -21,12 +21,12 @@ for domain in "${DOMAINS[@]}"; do
 done
 
 echo ">> Verificando que cloudflared está conectado..."
-if kubectl -n yormun get deployment cloudflared >/dev/null 2>&1; then
-  if kubectl -n yormun rollout status deployment/cloudflared --timeout=60s >/dev/null 2>&1; then
+if kubectl -n jin get deployment cloudflared >/dev/null 2>&1; then
+  if kubectl -n jin rollout status deployment/cloudflared --timeout=60s >/dev/null 2>&1; then
     echo "   OK: cloudflared Ready (túnel establecido)."
   else
     echo "   FALLO: cloudflared no está Ready. Revisa el token y los logs:" >&2
-    echo "   kubectl -n yormun logs deploy/cloudflared" >&2
+    echo "   kubectl -n jin logs deploy/cloudflared" >&2
     fail=1
   fi
 else

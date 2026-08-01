@@ -6,7 +6,7 @@ set -euo pipefail
 
 FLUX_VERSION_EXPECTED="${FLUX_VERSION_EXPECTED:-2.9.2}"
 GITHUB_OWNER="${GITHUB_OWNER:-JFrnck}"
-GITHUB_REPO="${GITHUB_REPO:-Yormun_Infra}"
+GITHUB_REPO="${GITHUB_REPO:-Jin_Infra}"
 
 if ! command -v flux >/dev/null 2>&1; then
   echo "ERROR: flux CLI no encontrado. Instala v${FLUX_VERSION_EXPECTED}:" >&2

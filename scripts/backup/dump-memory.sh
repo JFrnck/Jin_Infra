@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # Backup de la memoria extendida sqlite-vec (BLUEPRINT 3.3.1 y 3.5).
 # Requiere el archivo en MEMORY_DB_PATH (montaje read-only de la PVC
-# yormun-core-data — ver k8s/base/backup/cronjob-memory.yaml).
+# jin-core-data — ver k8s/base/backup/cronjob-memory.yaml).
 #
-# El módulo src/memory/ de Yormun_Core no existe hasta la Fase 4: si el
+# El módulo src/memory/ de Jin_Core no existe hasta la Fase 4: si el
 # archivo aún no existe, esto NO es un fallo (orden temporal esperado),
 # se registra y se sale 0 para no disparar alertas falsas.
 set -euo pipefail

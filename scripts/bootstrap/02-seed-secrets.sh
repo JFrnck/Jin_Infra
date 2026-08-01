@@ -4,7 +4,7 @@
 # vive en Infisical (AGENTS.md 5.2). Idempotente: re-ejecutable sin drama.
 #
 # Variables de entorno requeridas (NUNCA se logean sus valores):
-#   POSTGRES_PASSWORD          password del usuario yormun de Postgres
+#   POSTGRES_PASSWORD          password del usuario jin de Postgres
 #   REDIS_PASSWORD             requirepass de Redis
 #   INFISICAL_ENCRYPTION_KEY   hex de 16 bytes:  openssl rand -hex 16
 #   INFISICAL_AUTH_SECRET      base64 de 32 bytes: openssl rand -base64 32
@@ -18,10 +18,10 @@
 #   R2_SECRET_ACCESS_KEY       secret del API token de R2
 #
 # Opcional:
-#   R2_BUCKET                  default "yormun-backups" (BLUEPRINT 3.6)
+#   R2_BUCKET                  default "jin-backups" (BLUEPRINT 3.6)
 set -euo pipefail
 
-: "${R2_BUCKET:=yormun-backups}"
+: "${R2_BUCKET:=jin-backups}"
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 
@@ -67,19 +67,19 @@ apply_secret() {
 }
 
 echo ">> Creando Secrets semilla..."
-apply_secret yormun postgres-credentials \
+apply_secret jin postgres-credentials \
   "password=${POSTGRES_PASSWORD}"
 
-apply_secret yormun redis-credentials \
+apply_secret jin redis-credentials \
   "password=${REDIS_PASSWORD}"
 
-apply_secret yormun infisical-secrets \
+apply_secret jin infisical-secrets \
   "ENCRYPTION_KEY=${INFISICAL_ENCRYPTION_KEY}" \
   "AUTH_SECRET=${INFISICAL_AUTH_SECRET}" \
-  "DB_CONNECTION_URI=postgres://yormun:${POSTGRES_PASSWORD}@postgres.yormun.svc.cluster.local:5432/infisical?sslmode=disable" \
-  "REDIS_URL=redis://:${REDIS_PASSWORD}@redis.yormun.svc.cluster.local:6379"
+  "DB_CONNECTION_URI=postgres://jin:${POSTGRES_PASSWORD}@postgres.jin.svc.cluster.local:5432/infisical?sslmode=disable" \
+  "REDIS_URL=redis://:${REDIS_PASSWORD}@redis.jin.svc.cluster.local:6379"
 
-apply_secret yormun cloudflared-token \
+apply_secret jin cloudflared-token \
   "token=${CLOUDFLARED_TUNNEL_TOKEN}"
 
 apply_secret cert-manager cloudflare-api-token \
@@ -89,11 +89,11 @@ apply_secret observability grafana-admin \
   "user=admin" \
   "password=${GRAFANA_ADMIN_PASSWORD}"
 
-apply_secret yormun age-backup-key \
+apply_secret jin age-backup-key \
   "public-key=${AGE_PUBLIC_KEY}" \
   "private-key=${AGE_PRIVATE_KEY}"
 
-apply_secret yormun r2-credentials \
+apply_secret jin r2-credentials \
   "account-id=${R2_ACCOUNT_ID}" \
   "access-key-id=${R2_ACCESS_KEY_ID}" \
   "secret-access-key=${R2_SECRET_ACCESS_KEY}" \
