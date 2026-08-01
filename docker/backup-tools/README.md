@@ -2,12 +2,12 @@
 
 Imagen mínima (Alpine 3.20) con `pg_dump`/`pg_restore`/`psql`/`initdb`/`pg_ctl`, `redis-cli`, `sqlite3`, `age` y `rclone` — las herramientas que usan los scripts de `../../scripts/backup/`, que además vienen horneados en `/scripts` dentro de la imagen. Ninguna imagen oficial trae las cinco juntas.
 
-Publicada en `ghcr.io/jfrnck/yormun-backup-tools`, pinneada con un tag de versión manual (nunca `latest`).
+Publicada en `ghcr.io/jfrnck/jin-backup-tools`, pinneada con un tag de versión manual (nunca `latest`).
 
 **Build context = raíz del repo**, no este directorio (necesita `COPY scripts/backup /scripts`):
 
 ```bash
-docker build -f docker/backup-tools/Dockerfile -t yormun-backup-tools:local ../..
+docker build -f docker/backup-tools/Dockerfile -t jin-backup-tools:local ../..
 ```
 
 ## Cuándo bumpear la versión

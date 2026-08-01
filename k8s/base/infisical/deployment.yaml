@@ -6,7 +6,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: infisical
-  namespace: yormun
+  namespace: jin
   labels:
     app.kubernetes.io/name: infisical
 spec:
@@ -41,7 +41,7 @@ spec:
                 name: infisical-secrets
           env:
             - name: SITE_URL
-              value: http://infisical.yormun.svc.cluster.local:8080
+              value: http://infisical.jin.svc.cluster.local:8080
             - name: TELEMETRY_ENABLED
               value: "false"
           ports:

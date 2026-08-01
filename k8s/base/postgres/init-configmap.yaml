@@ -3,9 +3,9 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: postgres-init
-  namespace: yormun
+  namespace: jin
 data:
   01-extensions.sql: |
     CREATE EXTENSION IF NOT EXISTS vector;
   02-infisical-db.sql: |
-    CREATE DATABASE infisical OWNER yormun;
+    CREATE DATABASE infisical OWNER jin;

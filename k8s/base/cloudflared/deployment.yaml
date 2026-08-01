@@ -1,12 +1,12 @@
 # Túnel Cloudflare (BLUEPRINT 5.1): la IP de OCI nunca se expone.
-# Modo remoto (token): los public hostnames *.yormun.com y *.yormungander.com
+# Modo remoto (token): los public hostnames *.jeanfranck.com y *.jinserver.com
 # se configuran en Zero Trust apuntando a Traefik (ver runbook, paso 4).
 # El token vive en el Secret cloudflared-token (seed en bootstrap).
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: cloudflared
-  namespace: yormun
+  namespace: jin
   labels:
     app.kubernetes.io/name: cloudflared
 spec:

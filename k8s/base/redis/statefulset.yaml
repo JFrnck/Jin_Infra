@@ -4,7 +4,7 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: redis
-  namespace: yormun
+  namespace: jin
   labels:
     app.kubernetes.io/name: redis
 spec:

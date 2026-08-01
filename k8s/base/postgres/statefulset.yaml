@@ -5,7 +5,7 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: postgres
-  namespace: yormun
+  namespace: jin
   labels:
     app.kubernetes.io/name: postgres
 spec:
@@ -34,9 +34,9 @@ spec:
                 - ALL
           env:
             - name: POSTGRES_USER
-              value: yormun
+              value: jin
             - name: POSTGRES_DB
-              value: yormun
+              value: jin
             - name: POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
@@ -49,12 +49,12 @@ spec:
               containerPort: 5432
           readinessProbe:
             exec:
-              command: ["pg_isready", "-U", "yormun", "-d", "yormun"]
+              command: ["pg_isready", "-U", "jin", "-d", "jin"]
             initialDelaySeconds: 10
             periodSeconds: 10
           livenessProbe:
             exec:
-              command: ["pg_isready", "-U", "yormun", "-d", "yormun"]
+              command: ["pg_isready", "-U", "jin", "-d", "jin"]
             initialDelaySeconds: 30
             periodSeconds: 20
           resources:

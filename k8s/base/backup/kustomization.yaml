@@ -1,4 +1,4 @@
-# Los scripts vienen horneados en la imagen ghcr.io/jfrnck/yormun-backup-tools
+# Los scripts vienen horneados en la imagen ghcr.io/jfrnck/jin-backup-tools
 # (docker/backup-tools/Dockerfile) — no hay ConfigMap de scripts.
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization

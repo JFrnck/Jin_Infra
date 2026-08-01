@@ -4,7 +4,7 @@ apiVersion: batch/v1
 kind: CronJob
 metadata:
   name: backup-postgres
-  namespace: yormun
+  namespace: jin
 spec:
   schedule: "0 3 * * *"
   timeZone: America/Lima
@@ -24,7 +24,7 @@ spec:
             runAsNonRoot: true
           containers:
             - name: backup-postgres
-              image: ghcr.io/jfrnck/yormun-backup-tools:v1
+              image: ghcr.io/jfrnck/jin-backup-tools:v1
               command: ["bash", "/scripts/dump-postgres.sh"]
               securityContext:
                 allowPrivilegeEscalation: false
@@ -33,11 +33,11 @@ spec:
                     - ALL
               env:
                 - name: PGHOST
-                  value: postgres.yormun.svc.cluster.local
+                  value: postgres.jin.svc.cluster.local
                 - name: PGUSER
-                  value: yormun
+                  value: jin
                 - name: PGDATABASE
-                  value: yormun
+                  value: jin
                 - name: PGPASSWORD
                   valueFrom:
                     secretKeyRef:

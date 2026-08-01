@@ -22,10 +22,10 @@ echo ">> Aplicando overlay de producción..."
 kubectl apply -k "${REPO_ROOT}/k8s/overlays/production"
 
 echo ">> Esperando rollouts..."
-kubectl -n yormun rollout status statefulset/postgres --timeout=600s
-kubectl -n yormun rollout status statefulset/redis --timeout=300s
-kubectl -n yormun rollout status deployment/infisical --timeout=600s
-kubectl -n yormun rollout status deployment/cloudflared --timeout=300s
+kubectl -n jin rollout status statefulset/postgres --timeout=600s
+kubectl -n jin rollout status statefulset/redis --timeout=300s
+kubectl -n jin rollout status deployment/infisical --timeout=600s
+kubectl -n jin rollout status deployment/cloudflared --timeout=300s
 kubectl -n observability rollout status deployment/prometheus --timeout=300s
 kubectl -n observability rollout status deployment/loki --timeout=300s
 kubectl -n observability rollout status deployment/grafana --timeout=300s

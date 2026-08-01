@@ -6,7 +6,7 @@ apiVersion: batch/v1
 kind: CronJob
 metadata:
   name: verify-restore
-  namespace: yormun
+  namespace: jin
 spec:
   schedule: "0 4 1 * *"
   timeZone: America/Lima
@@ -27,7 +27,7 @@ spec:
             runAsNonRoot: true
           containers:
             - name: verify-restore
-              image: ghcr.io/jfrnck/yormun-backup-tools:v1
+              image: ghcr.io/jfrnck/jin-backup-tools:v1
               command: ["bash", "/scripts/verify-restore.sh"]
               securityContext:
                 allowPrivilegeEscalation: false

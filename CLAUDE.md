@@ -1,4 +1,4 @@
-# CLAUDE.md — Yormun_Infra
+# CLAUDE.md — Jin_Infra
 
-Lee `../Yormun_Docs/CLAUDE.md` y `../Yormun_Docs/AGENTS.md` primero.
-Tu área en este repo: `scripts/backup/**`. El resto lo lidera Antigravity — negocia en `../Yormun_Docs/STATUS.md`.
+Lee `../Jin_Docs/CLAUDE.md` y `../Jin_Docs/AGENTS.md` primero.
+Tu área en este repo: `scripts/backup/**`. El resto lo lidera Antigravity — negocia en `../Jin_Docs/STATUS.md`.

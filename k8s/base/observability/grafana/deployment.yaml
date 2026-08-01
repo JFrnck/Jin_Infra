@@ -1,4 +1,4 @@
-# Grafana en grafana.yormun.com, detrás de Cloudflare Access (BLUEPRINT 5.1).
+# Grafana en grafana.jeanfranck.com, detrás de Cloudflare Access (BLUEPRINT 5.1).
 # Credenciales admin en el Secret grafana-admin (seed en bootstrap).
 apiVersion: apps/v1
 kind: Deployment
@@ -44,7 +44,7 @@ spec:
                   name: grafana-admin
                   key: password
             - name: GF_SERVER_ROOT_URL
-              value: https://grafana.yormun.com
+              value: https://grafana.jeanfranck.com
             - name: GF_ANALYTICS_REPORTING_ENABLED
               value: "false"
           ports:
