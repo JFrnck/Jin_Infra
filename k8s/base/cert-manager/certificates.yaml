@@ -42,3 +42,21 @@ spec:
     kind: ClusterIssuer
   dnsNames:
     - "*.jeanfranck.com"
+---
+# Fase 5.5 (ADR 0006): pods de servicio expuestos bajo
+# https://<slug>.jinserver.com terminan TLS en agents-sandbox, no en
+# jin — el Secret del Certificate de arriba no es visible acá (mismo
+# motivo que el resto de este archivo: Secrets TLS namespace-scoped).
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: wildcard-jinserver-com
+  namespace: agents-sandbox
+spec:
+  secretName: wildcard-jinserver-com-tls
+  issuerRef:
+    name: letsencrypt-dns01
+    kind: ClusterIssuer
+  dnsNames:
+    - "jinserver.com"
+    - "*.jinserver.com"

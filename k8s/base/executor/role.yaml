@@ -9,6 +9,13 @@
 # declare egressWhitelist no vacío (hoy ninguna lo hace — ver ADR 0003
 # punto 2, UnresolvedEgressWhitelistError). Sigue sin tocar Secrets,
 # ConfigMaps, Deployments ni otros namespaces.
+#
+# services + ingressroutes.traefik.io (Fase 5.5, ADR 0006): pods de
+# servicio de larga vida expuestos bajo https://<slug>.jinserver.com.
+# `list` sobre pods/services ya lo usa PreviewServiceLifecycleService
+# para enumerar servicios activos (Kubernetes es el store de estado,
+# sin tabla propia — ver ADR 0006 punto 3). Mismo alcance: SOLO
+# agents-sandbox, sin acceso a Secrets/ConfigMaps/Deployments.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
@@ -18,6 +25,12 @@ rules:
   - apiGroups: [""]
     resources: ["pods"]
     verbs: ["create", "get", "list", "delete"]
+  - apiGroups: [""]
+    resources: ["services"]
+    verbs: ["create", "get", "list", "delete"]
   - apiGroups: ["networking.k8s.io"]
     resources: ["networkpolicies"]
     verbs: ["create", "delete"]
+  - apiGroups: ["traefik.io"]
+    resources: ["ingressroutes"]
+    verbs: ["create", "get", "list", "delete"]

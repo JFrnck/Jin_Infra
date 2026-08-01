@@ -5,3 +5,4 @@ resources:
   - namespaces.yaml
   - agents-sandbox-quota.yaml
   - agents-sandbox-limitrange.yaml
+  - agents-sandbox-pnpm-pvc.yaml

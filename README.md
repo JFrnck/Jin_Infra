@@ -127,6 +127,14 @@ Zero Trust → Access → Applications: crea una aplicación self-hosted para `g
 
 No hay warm pool: los pods de agentes se crean bajo demanda y la imagen cacheada da arranques de ~2-5 s. Re-ejecutar tras cada upgrade de imagen.
 
+### 9. `fs.inotify.max_user_watches` (Fase 5.5, ADR 0006)
+
+```bash
+./scripts/bootstrap/07-sysctl-inotify.sh
+```
+
+Sin esto, el hot reload de los pods de servicio (`npm run dev`, etc. bajo `*.jinserver.com`) deja de funcionar **en silencio** al agotarse el límite default del kernel — no es un sysctl seteable por pod (no está namespaced), así que se sube una vez en el nodo. Persistente vía `/etc/sysctl.d/99-jin-inotify.conf`, sobrevive reboots.
+
 ## Backups (Fase 1.2)
 
 Cron diario (BLUEPRINT 3.5), streaming puro — el dump nunca toca disco sin cifrar:
