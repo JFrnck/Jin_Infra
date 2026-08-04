@@ -1,0 +1,44 @@
+# Postgres + Redis para desarrollo local de Jin_Core/Jin_Executor —
+# referenciado en Jin_Core/CLAUDE.md y Jin_Docs/CLAUDE.md §4, nunca creado
+# hasta ahora. Mismas imágenes que producción (k8s/base/postgres,
+# k8s/base/redis) para que el comportamiento local coincida con el real
+# (pgvector disponible aunque hoy ningún módulo lo use todavía — solo
+# sqlite-vec para memoria — BLUEPRINT 3.3.1).
+#
+# Uso: docker compose -f Jin_Infra/docker-compose.dev.yaml up -d
+# Nunca usar para producción: sin réplicas, sin backups, credenciales
+# de desarrollo fijas (ver el mismo criterio ya documentado en
+# Jin_Core/.env.example).
+services:
+  postgres:
+    image: pgvector/pgvector:0.8.5-pg16
+    environment:
+      POSTGRES_USER: jin
+      POSTGRES_PASSWORD: jin
+      POSTGRES_DB: jin
+    ports:
+      - '5432:5432'
+    volumes:
+      - jin-postgres-dev:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD', 'pg_isready', '-U', 'jin', '-d', 'jin']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7.4.9-alpine
+    command: redis-server --appendonly yes
+    ports:
+      - '6379:6379'
+    volumes:
+      - jin-redis-dev:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  jin-postgres-dev:
+  jin-redis-dev:
