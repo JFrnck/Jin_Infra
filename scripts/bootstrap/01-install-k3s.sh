@@ -6,11 +6,22 @@
 set -euo pipefail
 
 K3S_VERSION="${K3S_VERSION:-v1.36.2+k3s1}"
+# Hash obtenido en 2026-08-05. Si k3s-io actualiza el instalador legítimamente,
+# este script fallará ("sha256sum: WARNING: 1 computed checksum did NOT match").
+# Para solucionarlo: 
+# 1. Verificar el cambio en https://github.com/k3s-io/k3s/commits/master/install.sh
+# 2. curl -sL https://get.k3s.io | sha256sum
+# 3. Actualizar el valor de INSTALL_SH_SHA256 aquí.
+INSTALL_SH_SHA256="ed01f89fd977bf20ac1516bbebf8370bf3ddbaa55dac8aba610956a4c78cc00b"
 
-echo ">> Instalando K3s ${K3S_VERSION} (servicelb deshabilitado)..."
-curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION="${K3S_VERSION}" sh -s - server \
+echo ">> Descargando y verificando instalador de K3s ${K3S_VERSION} (servicelb deshabilitado)..."
+curl -sfL https://get.k3s.io -o install.sh
+echo "${INSTALL_SH_SHA256}  install.sh" | sha256sum -c -
+
+INSTALL_K3S_VERSION="${K3S_VERSION}" sh install.sh server \
   --disable=servicelb \
   --write-kubeconfig-mode=0600
+rm -f install.sh
 
 echo ">> Esperando a que el nodo esté Ready..."
 sudo k3s kubectl wait --for=condition=Ready node --all --timeout=300s
