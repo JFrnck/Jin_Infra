@@ -1,0 +1,20 @@
+# Ruteo estático (a diferencia de las IngressRoutes dinámicas que crea
+# Jin_Executor por preview — ver ADR 0006 punto 7 / k8s.service.ts):
+# jin.jeanfranck.com/api -> jin-core. El resto del host (dashboard) lo
+# sirve Cloudflare Pages directamente, fuera del clúster (BLUEPRINT 8.1).
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: jin-core-api
+  namespace: jin
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`jin.jeanfranck.com`) && PathPrefix(`/api`)
+      kind: Rule
+      services:
+        - name: jin-core
+          port: 3000
+  tls:
+    secretName: wildcard-jeanfranck-com-tls
