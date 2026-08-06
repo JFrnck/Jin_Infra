@@ -67,10 +67,12 @@ spec:
               port: http
             initialDelaySeconds: 20
             periodSeconds: 20
+          # Presupuesto de recursos obligatorio (BLUEPRINT 3.1.1) — valores
+          # exactos de la tabla, no aproximados.
           resources:
             requests:
               cpu: 100m
-              memory: 128Mi
-            limits:
-              cpu: 500m
               memory: 256Mi
+            limits:
+              cpu: 400m
+              memory: 512Mi
