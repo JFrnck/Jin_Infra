@@ -1,0 +1,78 @@
+# jin-executor: microservicio de ejecución aislada (BLUEPRINT 4.2). Usa
+# el ServiceAccount `executor` ya creado (serviceaccount.yaml) — su RBAC
+# no cambia acá. En producción usa kubeConfig.loadFromCluster() (no
+# necesita KUBECONFIG_PATH). Sin PVC: no persiste estado propio.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: executor
+  namespace: jin-executor
+  labels:
+    app.kubernetes.io/name: executor
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: executor
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: executor
+    spec:
+      serviceAccountName: executor
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        runAsNonRoot: true
+      imagePullSecrets:
+        - name: ghcr-pull-secret
+      containers:
+        - name: executor
+          # TODO(owner, antes del bootstrap real): reemplazar por el tag
+          # real publicado por el CI de Jin_Executor tras mergear su PR
+          # a main (job "docker", tag = SHA del commit en main).
+          image: ghcr.io/jfrnck/jin-executor:PLACEHOLDER_UPDATE_BEFORE_DEPLOY
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          envFrom:
+            - secretRef:
+                name: jin-executor-secrets
+          env:
+            - name: PORT
+              value: "3001"
+          ports:
+            - name: http
+              containerPort: 3001
+          # TCP, no HTTP: a diferencia de jin-core (PR #22), Jin_Executor
+          # todavía no tiene un endpoint /health propio. TCP confirma que
+          # el proceso Nest ya escucha el puerto — suficiente para
+          # "ReadinessProbe obligatoria" (BLUEPRINT 12.2) sin inventar un
+          # endpoint HTTP que no existe. Candidato a mejorar cuando
+          # Jin_Executor adopte el mismo patrón de /health que Core.
+          readinessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 20
+          # Presupuesto de recursos obligatorio (BLUEPRINT 3.1.1) — valores
+          # exactos de la tabla, no aproximados.
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 400m
+              memory: 512Mi

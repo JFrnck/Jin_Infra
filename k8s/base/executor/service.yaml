@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: executor
+  namespace: jin-executor
+  labels:
+    app.kubernetes.io/name: executor
+spec:
+  selector:
+    app.kubernetes.io/name: executor
+  ports:
+    - name: http
+      port: 3001
+      targetPort: http

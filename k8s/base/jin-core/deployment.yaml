@@ -1,0 +1,93 @@
+# jin-core: orquestador principal (BLUEPRINT 4.1). Secrets vía Secret
+# jin-core-secrets (seed en bootstrap — ver 02-seed-secrets.sh; migra a
+# Infisical SDK en Fase 8.1). Probes en /health/ready y /health/live
+# (PR #22 de Jin_Core) — Fase 7.1 es literalmente lo que las esperaba.
+# Monta el PVC jin-core-data (k8s/base/backup/core-data-pvc.yaml, creado
+# en Fase 1.2) en /data/memory — mismo contrato que ya usa
+# cronjob-memory.yaml (RWO en clúster de un solo nodo: backup y core
+# pueden montarlo a la vez).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jin-core
+  namespace: jin
+  labels:
+    app.kubernetes.io/name: jin-core
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: jin-core
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: jin-core
+    spec:
+      # fsGroup: el volumen de memory.db debe ser escribible por el
+      # usuario no-root `node` (uid/gid 1000) de la imagen runtime.
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        runAsNonRoot: true
+      imagePullSecrets:
+        - name: ghcr-pull-secret
+      containers:
+        - name: jin-core
+          # TODO(owner, antes del bootstrap real): reemplazar por el tag
+          # real publicado por el CI de Jin_Core tras mergear su PR a
+          # main (job "docker", tag = SHA del commit en main). Este es
+          # un placeholder — Flux no puede reconciliar una imagen que
+          # todavía no existe en GHCR.
+          image: ghcr.io/jfrnck/jin-core:PLACEHOLDER_UPDATE_BEFORE_DEPLOY
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          envFrom:
+            - secretRef:
+                name: jin-core-secrets
+          env:
+            - name: PORT
+              value: "3000"
+            - name: MEMORY_DB_PATH
+              value: /data/memory/memory.db
+            - name: EXECUTOR_BASE_URL
+              value: http://executor.jin-executor.svc.cluster.local:3001
+          ports:
+            - name: http
+              containerPort: 3000
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health/live
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 20
+          # Presupuesto de recursos obligatorio (BLUEPRINT 3.1.1) — valores
+          # exactos de la tabla, no aproximados.
+          resources:
+            requests:
+              cpu: 200m
+              memory: 512Mi
+            limits:
+              cpu: 800m
+              memory: 1Gi
+          volumeMounts:
+            - name: core-data
+              mountPath: /data/memory
+      volumes:
+        - name: core-data
+          persistentVolumeClaim:
+            claimName: jin-core-data

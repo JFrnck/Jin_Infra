@@ -5,6 +5,7 @@ resources:
   - namespaces
   - network-policies
   - executor
+  - jin-core
   - postgres
   - redis
   - infisical
