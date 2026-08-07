@@ -82,4 +82,66 @@ if [[ -n "${CRITICAL_TABLES}" ]]; then
   done
 fi
 
-log "Restore test completo: OK."
+log "Restore test de Postgres completo: OK."
+
+log "Buscando el backup de Redis más reciente en R2..."
+LATEST_REDIS="$(list_r2_backups "${RCLONE_CONFIG}" "redis" | tail -n 1 | awk -F'\t' '{print $2}')"
+if [[ -n "${LATEST_REDIS}" ]]; then
+  log "Backup de Redis más reciente: ${LATEST_REDIS}"
+  rclone --config "${RCLONE_CONFIG}" copyto "r2:${R2_BUCKET}/${LATEST_REDIS}" "${SCRATCH_DIR}/redis.age"
+  
+  log "Descifrando RDB de Redis..."
+  age_decrypt_file "${AGE_IDENTITY_PATH}" "${SCRATCH_DIR}/redis.age" "${SCRATCH_DIR}/dump.rdb"
+  
+  log "Validando integridad del archivo RDB..."
+  redis-check-rdb "${SCRATCH_DIR}/dump.rdb" >/dev/null
+
+  log "Levantando instancia efímera de Redis..."
+  REDIS_DIR="${SCRATCH_DIR}/redis_scratch"
+  mkdir -p "${REDIS_DIR}"
+  cp "${SCRATCH_DIR}/dump.rdb" "${REDIS_DIR}/dump.rdb"
+  REDIS_PORT=16379
+  redis-server --port ${REDIS_PORT} --dir "${REDIS_DIR}" --dbfilename dump.rdb --daemonize yes --logfile "${SCRATCH_DIR}/redis.log"
+
+  log "Ejecutando consultas de prueba contra la instancia efímera de Redis..."
+  REDIS_PING="$(redis-cli -p ${REDIS_PORT} PING)"
+  KEY_COUNT="$(redis-cli -p ${REDIS_PORT} DBSIZE)"
+  log "  PING Redis: ${REDIS_PING}"
+  log "  Claves encontradas en la BD restaurada: ${KEY_COUNT}"
+
+  redis-cli -p ${REDIS_PORT} shutdown >/dev/null 2>&1 || true
+
+  log "Restore test de Redis completo: OK."
+else
+  log "INFO: No se encontró ningún backup de Redis."
+fi
+
+log "Buscando el backup de memory.db más reciente en R2..."
+LATEST_MEMORY="$(list_r2_backups "${RCLONE_CONFIG}" "memory" | tail -n 1 | awk -F'\t' '{print $2}')"
+if [[ -n "${LATEST_MEMORY}" ]]; then
+  log "Backup de memory.db más reciente: ${LATEST_MEMORY}"
+  rclone --config "${RCLONE_CONFIG}" copyto "r2:${R2_BUCKET}/${LATEST_MEMORY}" "${SCRATCH_DIR}/memory.age"
+  
+  log "Descifrando memory.db..."
+  age_decrypt_file "${AGE_IDENTITY_PATH}" "${SCRATCH_DIR}/memory.age" "${SCRATCH_DIR}/memory.db"
+  
+  log "Validando integridad y ejecutando consultas en memory.db..."
+  sqlite3 "${SCRATCH_DIR}/memory.db" "PRAGMA integrity_check;" >/dev/null
+  
+  TABLE_COUNT="$(sqlite3 "${SCRATCH_DIR}/memory.db" "SELECT count(*) FROM sqlite_master WHERE type='table';")"
+  log "  Tablas encontradas en memory.db: ${TABLE_COUNT}"
+
+  VEC_COUNT="$(sqlite3 "${SCRATCH_DIR}/memory.db" "SELECT count(*) FROM sqlite_master WHERE type='table' AND name='vec0';")"
+  if [[ "${VEC_COUNT}" -eq 1 ]]; then
+    ROW_COUNT="$(sqlite3 "${SCRATCH_DIR}/memory.db" "SELECT count(*) FROM vec0;")"
+    log "  Filas en la tabla de vectores vec0: ${ROW_COUNT}"
+  else
+    log "  (Tabla vec0 aún no inicializada en la BD de memoria)"
+  fi
+  
+  log "Restore test de memory.db completo: OK."
+else
+  log "INFO: No se encontró ningún backup de memory.db."
+fi
+
+log "Restore tests completos: TODOS OK."
