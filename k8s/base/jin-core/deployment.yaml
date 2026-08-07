@@ -39,12 +39,9 @@ spec:
         - name: ghcr-pull-secret
       containers:
         - name: jin-core
-          # TODO(owner, antes del bootstrap real): reemplazar por el tag
-          # real publicado por el CI de Jin_Core tras mergear su PR a
-          # main (job "docker", tag = SHA del commit en main). Este es
-          # un placeholder — Flux no puede reconciliar una imagen que
-          # todavía no existe en GHCR.
-          image: ghcr.io/jfrnck/jin-core:PLACEHOLDER_UPDATE_BEFORE_DEPLOY
+          # Tag = SHA del commit en main publicado por el CI de Jin_Core
+          # (job "docker"). Actualizar en el próximo release real.
+          image: ghcr.io/jfrnck/jin-core:65528bffa7475dcfdfa38bea56e64c11dc474da5
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
