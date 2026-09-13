@@ -7,6 +7,6 @@ metadata:
   namespace: agents-sandbox
 spec:
   hard:
-    limits.cpu: "1500m"
-    limits.memory: 6Gi
-    pods: "10"
+    limits.cpu: "1000m"
+    limits.memory: 2Gi
+    pods: "4"

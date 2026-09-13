@@ -34,7 +34,12 @@ spec:
           command:
             - sh
             - -c
-            - exec redis-server --appendonly yes --requirepass "$REDIS_PASSWORD"
+            # maxmemory por debajo del limit del container (512Mi): deja margen
+            # para el overhead del proceso (buffers de replicación/AOF, sockets)
+            # que no cuenta contra maxmemory. allkeys-lru es seguro porque Redis
+            # solo guarda contadores de rate-limiting (redis-throttler-storage.ts),
+            # no estado crítico — el task ledger vive en Postgres.
+            - exec redis-server --appendonly yes --requirepass "$REDIS_PASSWORD" --maxmemory 384mb --maxmemory-policy allkeys-lru
           env:
             - name: REDIS_PASSWORD
               valueFrom:
@@ -62,11 +67,11 @@ spec:
             periodSeconds: 20
           resources:
             requests:
-              cpu: 100m
-              memory: 512Mi
+              cpu: 50m
+              memory: 256Mi
             limits:
-              cpu: 500m
-              memory: 1Gi
+              cpu: 250m
+              memory: 512Mi
           volumeMounts:
             - name: data
               mountPath: /data

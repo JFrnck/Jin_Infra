@@ -10,10 +10,10 @@ spec:
     resources:
       requests:
         cpu: 50m
-        memory: 128Mi
+        memory: 64Mi
       limits:
-        cpu: 200m
-        memory: 256Mi
+        cpu: 150m
+        memory: 128Mi
     additionalArguments:
       - "--entryPoints.web.forwardedHeaders.trustedIPs=10.42.0.0/16"
       - "--entryPoints.websecure.forwardedHeaders.trustedIPs=10.42.0.0/16"

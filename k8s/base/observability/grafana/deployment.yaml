@@ -64,11 +64,11 @@ spec:
             periodSeconds: 20
           resources:
             requests:
-              cpu: 50m
-              memory: 256Mi
+              cpu: 25m
+              memory: 160Mi
             limits:
-              cpu: 200m
-              memory: 512Mi
+              cpu: 150m
+              memory: 256Mi
           volumeMounts:
             - name: datasources
               mountPath: /etc/grafana/provisioning/datasources
