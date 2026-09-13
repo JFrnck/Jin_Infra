@@ -2,6 +2,11 @@
 # el ServiceAccount `executor` ya creado (serviceaccount.yaml) — su RBAC
 # no cambia acá. En producción usa kubeConfig.loadFromCluster() (no
 # necesita KUBECONFIG_PATH). Sin PVC: no persiste estado propio.
+# Fase 8.1: MODAL_TOKEN_ID/SECRET ya no viven en un Secret de K8s --
+# se cargan de Infisical al startup (Jin_Executor/src/config/
+# secrets-loader.ts). jin-executor-secrets se eliminó por completo;
+# jin-executor-infisical-auth trae solo la identidad de máquina (propia
+# y separada de la de jin-core, menor privilegio).
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -43,10 +48,19 @@ spec:
                 - ALL
           envFrom:
             - secretRef:
-                name: jin-executor-secrets
+                name: jin-executor-infisical-auth
           env:
             - name: PORT
               value: "3001"
+            # Fase 8.1: no secretos -- ver Jin_Executor/src/config/env.schema.ts.
+            - name: INFISICAL_ENABLED
+              value: "true"
+            - name: INFISICAL_ENVIRONMENT
+              value: prod
+            # Placeholder a propósito, mismo motivo que en el Deployment
+            # de jin-core -- ver ese archivo.
+            - name: INFISICAL_PROJECT_ID
+              value: PENDIENTE_CREAR_PROYECTO_INFISICAL
           ports:
             - name: http
               containerPort: 3001

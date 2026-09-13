@@ -19,15 +19,11 @@
 #   GHCR_USERNAME              usuario de GitHub (pull de imágenes privadas)
 #   GHCR_PAT                   PAT con scope read:packages
 #
-# Fase 7.1 — runtime real de jin-core/jin-executor. Temporal: migra a
-# Infisical SDK en Fase 8.1 (mismo huevo-gallina que el resto de este
-# script hasta entonces):
-#   ANTHROPIC_API_KEY, GEMINI_API_KEY, OPENAI_API_KEY
-#   CANVAS_BASE_URL, CANVAS_API_TOKEN
-#   TELEGRAM_BOT_TOKEN, TELEGRAM_OWNER_CHAT_ID, TELEGRAM_WEBHOOK_SECRET
-#   GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REFRESH_TOKEN
-#   OWNER_PASSWORD_HASH, JWT_SECRET
-#   MODAL_TOKEN_ID, MODAL_TOKEN_SECRET
+# jin-core/jin-executor: solo DATABASE_URL/REDIS_URL siguen acá (mismo
+# huevo-gallina de infra). Las 13 claves reales de Core y las 2 de
+# Executor migraron a Infisical en Fase 8.1 -- ver
+# scripts/bootstrap/08-seed-infisical-app-secrets.sh, que corre después
+# de este (Infisical recién existe tras 04-apply-manifests.sh).
 #
 # Opcional:
 #   R2_BUCKET                  default "jin-backups" (BLUEPRINT 3.6)
@@ -52,21 +48,6 @@ required_vars=(
   R2_SECRET_ACCESS_KEY
   GHCR_USERNAME
   GHCR_PAT
-  ANTHROPIC_API_KEY
-  GEMINI_API_KEY
-  OPENAI_API_KEY
-  CANVAS_BASE_URL
-  CANVAS_API_TOKEN
-  TELEGRAM_BOT_TOKEN
-  TELEGRAM_OWNER_CHAT_ID
-  TELEGRAM_WEBHOOK_SECRET
-  GOOGLE_CLIENT_ID
-  GOOGLE_CLIENT_SECRET
-  GOOGLE_REFRESH_TOKEN
-  OWNER_PASSWORD_HASH
-  JWT_SECRET
-  MODAL_TOKEN_ID
-  MODAL_TOKEN_SECRET
 )
 missing=0
 for var in "${required_vars[@]}"; do
@@ -139,28 +120,14 @@ apply_secret jin r2-credentials \
   "secret-access-key=${R2_SECRET_ACCESS_KEY}" \
   "bucket=${R2_BUCKET}"
 
-# Fase 7.1 — runtime real de jin-core/jin-executor (ver cabecera: migra a
-# Infisical SDK en Fase 8.1).
+# jin-core: solo DATABASE_URL/REDIS_URL (huevo-gallina de infra). Las 13
+# claves reales migraron a Infisical en Fase 8.1 -- ver
+# 08-seed-infisical-app-secrets.sh, que corre después de este (una vez
+# que Infisical esté operativo). jin-executor-secrets se eliminó por
+# completo: sus 2 valores (Modal) migraron también.
 apply_secret jin jin-core-secrets \
   "DATABASE_URL=postgres://jin:${POSTGRES_PASSWORD}@postgres.jin.svc.cluster.local:5432/jin" \
-  "REDIS_URL=redis://:${REDIS_PASSWORD}@redis.jin.svc.cluster.local:6379" \
-  "ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}" \
-  "GEMINI_API_KEY=${GEMINI_API_KEY}" \
-  "OPENAI_API_KEY=${OPENAI_API_KEY}" \
-  "CANVAS_BASE_URL=${CANVAS_BASE_URL}" \
-  "CANVAS_API_TOKEN=${CANVAS_API_TOKEN}" \
-  "TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}" \
-  "TELEGRAM_OWNER_CHAT_ID=${TELEGRAM_OWNER_CHAT_ID}" \
-  "TELEGRAM_WEBHOOK_SECRET=${TELEGRAM_WEBHOOK_SECRET}" \
-  "GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}" \
-  "GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}" \
-  "GOOGLE_REFRESH_TOKEN=${GOOGLE_REFRESH_TOKEN}" \
-  "OWNER_PASSWORD_HASH=${OWNER_PASSWORD_HASH}" \
-  "JWT_SECRET=${JWT_SECRET}"
-
-apply_secret jin-executor jin-executor-secrets \
-  "MODAL_TOKEN_ID=${MODAL_TOKEN_ID}" \
-  "MODAL_TOKEN_SECRET=${MODAL_TOKEN_SECRET}"
+  "REDIS_URL=redis://:${REDIS_PASSWORD}@redis.jin.svc.cluster.local:6379"
 
 apply_ghcr_pull_secret jin
 apply_ghcr_pull_secret jin-executor
