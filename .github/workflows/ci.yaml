@@ -39,6 +39,9 @@ jobs:
       - name: shellcheck (backup, con -x para seguir el source de lib/)
         working-directory: scripts/backup
         run: shellcheck -x lib/common.sh dump-postgres.sh dump-redis.sh dump-memory.sh verify-restore.sh test/fixtures/bin/rclone
+      - name: shellcheck (chaos, con -x para seguir el source de lib/)
+        working-directory: scripts/chaos
+        run: shellcheck -x lib/common.sh 01-kill-core-mid-dual-confirm.sh 02-kill-postgres.sh 03-simulate-runaway.sh
 
   backup-tests:
     name: Tests de backup (bats)
