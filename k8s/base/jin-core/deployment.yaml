@@ -84,7 +84,17 @@ spec:
           volumeMounts:
             - name: core-data
               mountPath: /data/memory
+            # Fase 9.5 (BLUEPRINT §12.3): pisa el default que trae la
+            # imagen en config/feature-flags.yaml. jin-core lo re-lee en
+            # SIGHUP (nunca automático) -- ver ConfigMap
+            # jin-core-feature-flags.
+            - name: feature-flags
+              mountPath: /app/config/feature-flags.yaml
+              subPath: feature-flags.yaml
       volumes:
         - name: core-data
           persistentVolumeClaim:
             claimName: jin-core-data
+        - name: feature-flags
+          configMap:
+            name: jin-core-feature-flags
