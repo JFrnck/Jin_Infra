@@ -9,4 +9,10 @@ spec:
   hard:
     limits.cpu: "1000m"
     limits.memory: 2Gi
-    pods: "4"
+    # 3, no 4: cada pod pide 250m de CPU (LimitRange defaultRequest).
+    # Allocatable 1750m (2 vCPU - system-reserved, 01-install-k3s.sh)
+    # menos ~975m de requests fijos (workloads de este repo + Traefik +
+    # coredns + metrics-server) deja ~775m: caben 3. Un 4º pod quedaría
+    # Pending hasta su timeout; con la quota en 3 falla rápido con un
+    # error explícito de ResourceQuota.
+    pods: "3"

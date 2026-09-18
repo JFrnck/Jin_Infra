@@ -59,10 +59,14 @@ spec:
               port: http
             initialDelaySeconds: 60
             periodSeconds: 20
+          # 384Mi de limit era demasiado justo para un backend Node
+          # completo: un OOMKill de Infisical tumba en cascada a jin-core y
+          # executor, que leen sus secretos de acá al arrancar (Fase 8.1).
+          # Ratio 3x, dentro de la regla 1.5x-3x de AGENTS.md 4.4.
           resources:
             requests:
               cpu: 50m
-              memory: 192Mi
+              memory: 256Mi
             limits:
               cpu: 200m
-              memory: 384Mi
+              memory: 768Mi

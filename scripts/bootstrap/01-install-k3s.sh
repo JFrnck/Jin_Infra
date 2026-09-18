@@ -3,6 +3,11 @@
 # - servicelb deshabilitado: la única entrada al clúster es el Cloudflare
 #   Tunnel; no queremos puertos 80/443 escuchando en la IP pública de OCI.
 # - Traefik queda habilitado (es nuestro Ingress controller).
+# - system-reserved + eviction-hard: en una VM de 12GB/2vCPU, sin reserva
+#   explícita el kubelet reparte TODA la máquina entre pods y un pico puede
+#   dejar sin memoria a k3s/sshd. Con esto el allocatable queda en
+#   ~10.5Gi / 1750m (BLUEPRINT 3.1.1) y el kubelet desaloja pods antes de
+#   que el kernel llegue al OOM killer.
 set -euo pipefail
 
 K3S_VERSION="${K3S_VERSION:-v1.36.2+k3s1}"
@@ -20,7 +25,9 @@ echo "${INSTALL_SH_SHA256}  install.sh" | sha256sum -c -
 
 INSTALL_K3S_VERSION="${K3S_VERSION}" sh install.sh server \
   --disable=servicelb \
-  --write-kubeconfig-mode=0600
+  --write-kubeconfig-mode=0600 \
+  --kubelet-arg=system-reserved=cpu=250m,memory=768Mi \
+  '--kubelet-arg=eviction-hard=memory.available<300Mi'
 rm -f install.sh
 
 echo ">> Esperando a que el nodo esté Ready..."
