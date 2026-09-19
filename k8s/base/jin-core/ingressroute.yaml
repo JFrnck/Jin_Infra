@@ -1,6 +1,6 @@
 # Ruteo estático (a diferencia de las IngressRoutes dinámicas que crea
 # Jin_Executor por preview — ver ADR 0006 punto 7 / k8s.service.ts):
-# jin.jeanfranck.com/api -> jin-core. El resto del host (dashboard) lo
+# jin.jeanfranck.com/api y /telegram/webhook -> jin-core. El resto del host (dashboard) lo
 # sirve Cloudflare Pages directamente, fuera del clúster (BLUEPRINT 8.1).
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
@@ -12,6 +12,16 @@ spec:
     - websecure
   routes:
     - match: Host(`jin.jeanfranck.com`) && PathPrefix(`/api`)
+      kind: Rule
+      services:
+        - name: jin-core
+          port: 3000
+    # Webhook de Telegram: el controller vive en POST /telegram/webhook (sin
+    # prefijo /api), así que la regla de arriba nunca lo alcanzaba y Telegram
+    # -- único canal de aprobación HITL -- no podía entregar updates. Se abre
+    # ÚNICAMENTE ese path exacto, no /telegram/*. La autenticidad la valida
+    # el controller con X-Telegram-Bot-Api-Secret-Token (TELEGRAM_WEBHOOK_SECRET).
+    - match: Host(`jin.jeanfranck.com`) && Path(`/telegram/webhook`)
       kind: Rule
       services:
         - name: jin-core

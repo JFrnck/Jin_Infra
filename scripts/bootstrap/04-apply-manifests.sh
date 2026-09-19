@@ -21,13 +21,33 @@ kubectl apply -k "${REPO_ROOT}/k8s/overlays/production" --dry-run=server
 echo ">> Aplicando overlay de producción..."
 kubectl apply -k "${REPO_ROOT}/k8s/overlays/production"
 
-echo ">> Esperando rollouts..."
+echo ">> Esperando la infraestructura de datos..."
 kubectl -n jin rollout status statefulset/postgres --timeout=600s
 kubectl -n jin rollout status statefulset/redis --timeout=300s
+
+# Schema de jin-core: nada más lo crea (la imagen no migra sola al arrancar).
+# Va aquí, ya con Postgres listo y ANTES de esperar a jin-core.
+echo ">> Aplicando migraciones de DB..."
+bash "${REPO_ROOT}/scripts/migrate-db.sh"
+
+echo ">> Esperando el resto de la infraestructura..."
 kubectl -n jin rollout status deployment/infisical --timeout=600s
 kubectl -n jin rollout status deployment/cloudflared --timeout=300s
-kubectl -n jin rollout status deployment/jin-core --timeout=300s
-kubectl -n jin-executor rollout status deployment/executor --timeout=300s
+
+# jin-core y executor cargan sus secretos de Infisical al arrancar (Fase 8.1)
+# y INFISICAL_PROJECT_ID es un placeholder hasta el paso manual del runbook
+# (§7.6: crear proyecto + identidades de máquina). Sin eso NO pueden llegar a
+# Ready, y exigirlo aquí abortaba el script antes de tiempo (set -e). No es un
+# error: se avisa y se verifica después de §7.6.
+for target in "jin/jin-core" "jin-executor/executor"; do
+  ns="${target%%/*}"
+  name="${target##*/}"
+  if ! kubectl -n "${ns}" rollout status "deployment/${name}" --timeout=120s; then
+    echo "!! ${ns}/${name} aún no está Ready. Esperado si Infisical no está configurado"
+    echo "   todavía (runbook §7.6). Se verifica de nuevo en la verificación final (§8)."
+  fi
+done
+
 kubectl -n observability rollout status deployment/prometheus --timeout=300s
 kubectl -n observability rollout status deployment/loki --timeout=300s
 kubectl -n observability rollout status deployment/grafana --timeout=300s

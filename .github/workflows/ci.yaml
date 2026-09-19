@@ -28,6 +28,15 @@ jobs:
 
       - name: kube-linter
         run: /tmp/kube-linter lint /tmp/rendered.yaml --config .kube-linter.yaml
+      # Los Jobs de k8s/jobs/ viven FUERA del overlay a propósito (inmutables,
+      # ver el encabezado del manifest) y por eso el paso de arriba no los veía.
+      # La imagen se sustituye con un tag de ejemplo: en runtime la pone
+      # scripts/migrate-db.sh con la del Deployment jin-core.
+      - name: kube-linter (Jobs fuera del overlay)
+        run: |
+          sed "s|__JIN_CORE_IMAGE__|ghcr.io/jfrnck/jin-core:0000000000000000000000000000000000000000|" \
+            k8s/jobs/jin-core-migrate.yaml > /tmp/jobs-rendered.yaml
+          /tmp/kube-linter lint /tmp/jobs-rendered.yaml --config .kube-linter.yaml
 
   shellcheck:
     name: Shellcheck scripts
@@ -36,6 +45,8 @@ jobs:
       - uses: actions/checkout@v4
       - name: shellcheck (bootstrap)
         run: shellcheck scripts/bootstrap/*.sh
+      - name: shellcheck (migrate-db)
+        run: shellcheck scripts/migrate-db.sh
       - name: shellcheck (backup, con -x para seguir el source de lib/)
         working-directory: scripts/backup
         run: shellcheck -x lib/common.sh dump-postgres.sh dump-redis.sh dump-memory.sh verify-restore.sh test/fixtures/bin/rclone
