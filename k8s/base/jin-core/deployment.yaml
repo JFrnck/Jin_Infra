@@ -1,6 +1,11 @@
-# jin-core: orquestador principal (BLUEPRINT 4.1). Secrets vía Secret
-# jin-core-secrets (seed en bootstrap — ver 02-seed-secrets.sh; migra a
-# Infisical SDK en Fase 8.1). Probes en /health/ready y /health/live
+# jin-core: orquestador principal (BLUEPRINT 4.1). Fase 8.1: los 13
+# secretos reales (API keys, JWT_SECRET, etc.) ya NO viven en un Secret
+# de K8s -- jin-core los carga de Infisical al startup (ver
+# Jin_Core/src/config/secrets-loader.ts). jin-core-secrets (seed en
+# bootstrap, 02-seed-secrets.sh) ahora solo trae DATABASE_URL/REDIS_URL
+# (huevo-gallina de infra, no migra). jin-core-infisical-auth trae las
+# credenciales de la identidad de máquina (Universal Auth) -- el único
+# secreto que sigue fuera de Infisical. Probes en /health/ready y /health/live
 # (PR #22 de Jin_Core) — Fase 7.1 es literalmente lo que las esperaba.
 # Monta el PVC jin-core-data (k8s/base/backup/core-data-pvc.yaml, creado
 # en Fase 1.2) en /data/memory — mismo contrato que ya usa
@@ -50,6 +55,8 @@ spec:
           envFrom:
             - secretRef:
                 name: jin-core-secrets
+            - secretRef:
+                name: jin-core-infisical-auth
           env:
             - name: PORT
               value: "3000"
@@ -57,6 +64,20 @@ spec:
               value: /data/memory/memory.db
             - name: EXECUTOR_BASE_URL
               value: http://executor.jin-executor.svc.cluster.local:3001
+            # Fase 8.1: no secretos -- ver Jin_Core/src/config/env.schema.ts.
+            - name: INFISICAL_ENABLED
+              value: "true"
+            - name: INFISICAL_ENVIRONMENT
+              value: prod
+            # INFISICAL_PROJECT_ID no tiene un valor real todavía: se
+            # completa al ejecutar el paso manual del runbook
+            # (crear el proyecto + identidades de máquina en Infisical,
+            # ver docs/runbooks/oci-deploy-prep.md). Placeholder a
+            # propósito -- sin esto el pod nunca llega a Ready cuando
+            # INFISICAL_ENABLED=true, que es la señal correcta de que
+            # falta ese paso.
+            - name: INFISICAL_PROJECT_ID
+              value: PENDIENTE_CREAR_PROYECTO_INFISICAL
           ports:
             - name: http
               containerPort: 3000
