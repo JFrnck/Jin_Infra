@@ -11,13 +11,18 @@
 set -euo pipefail
 
 K3S_VERSION="${K3S_VERSION:-v1.36.2+k3s1}"
-# Hash obtenido en 2026-08-05. Si k3s-io actualiza el instalador legítimamente,
-# este script fallará ("sha256sum: WARNING: 1 computed checksum did NOT match").
-# Para solucionarlo: 
-# 1. Verificar el cambio en https://github.com/k3s-io/k3s/commits/master/install.sh
-# 2. curl -sL https://get.k3s.io | sha256sum
-# 3. Actualizar el valor de INSTALL_SH_SHA256 aquí.
-INSTALL_SH_SHA256="ed01f89fd977bf20ac1516bbebf8370bf3ddbaa55dac8aba610956a4c78cc00b"
+# Hash del install.sh de k3s-io/k3s en el commit 2977c525 (2026-09-03).
+# Verificado el 2026-09-19: el pin anterior (ed01f89f...) era exactamente el
+# install.sh del commit 2d0f82fa, y entre ambos solo cambió un bloque de
+# setup_selinux() para coreos/flatcar (2 líneas, irrelevante en Ubuntu).
+# Si k3s-io actualiza el instalador legítimamente, este script fallará
+# ("sha256sum: WARNING: 1 computed checksum did NOT match"). Para solucionarlo:
+# 1. Ver qué cambió: gh api "repos/k3s-io/k3s/commits?path=install.sh&since=<fecha del pin>"
+#    y revisar el patch de cada commit -- NO actualizar el hash sin leerlo.
+# 2. Confirmar que lo que sirve get.k3s.io es ese commit:
+#    curl -sL https://get.k3s.io | sha256sum   (debe igualar el install.sh del commit)
+# 3. Actualizar el valor de INSTALL_SH_SHA256 aquí y anotar el commit arriba.
+INSTALL_SH_SHA256="e5cc3b3d9dfc1662c2d9be6da5abc9a4cd317d6abc3a5ffc02e3dd3248207fee"
 
 echo ">> Descargando y verificando instalador de K3s ${K3S_VERSION} (servicelb deshabilitado)..."
 curl -sfL https://get.k3s.io -o install.sh
