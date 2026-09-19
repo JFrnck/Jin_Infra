@@ -32,7 +32,7 @@ Versiones de imágenes pinneadas en los manifests, verificadas contra Docker Hub
 
 ## Prerequisitos
 
-- VM OCI Always Free ARM (4 vCPU / 24 GB / 200 GB), Ubuntu 24.04, acceso SSH.
+- VM OCI Always Free ARM (2 vCPU / 12 GB / 200 GB), Ubuntu 24.04, acceso SSH.
 - Dominios `jeanfranck.com` y `jinserver.com` con DNS en Cloudflare.
 - Cuenta Cloudflare con Zero Trust habilitado (plan free basta).
 - En tu máquina o la VM: `git`, `curl`, `dig`.
@@ -162,7 +162,7 @@ Cron diario (BLUEPRINT 3.5), streaming puro — el dump nunca toca disco sin cif
 ## Notas de diseño
 
 - **Secrets:** ningún YAML de este repo contiene un secreto; todos referencian Secrets de K8s sembrados por `02-seed-secrets.sh` (semilla) o gestionados vía Infisical después. `gitleaks` corre en pre-commit en los repos de app.
-- **agents-sandbox:** ResourceQuota como techo de ráfaga (6Gi/1500m, consumo idle cero), LimitRange con default 512Mi/500m y máximo 2Gi/1500m, PSA `restricted`, y NetworkPolicy default-deny con solo DNS de salida — las whitelists por tool las inyecta el Executor en runtime (Fase 5).
+- **agents-sandbox:** ResourceQuota como techo de ráfaga (2Gi/1000m, consumo idle cero), LimitRange con default 512Mi/500m y máximo 1Gi/1000m, PSA `restricted`, y NetworkPolicy default-deny con solo DNS de salida — las whitelists por tool las inyecta el Executor en runtime (Fase 5).
 - **1 réplica + `maxSurge: 1, maxUnavailable: 0`** en los Deployments con rolling update: cero downtime sin pods redundantes (ANALISIS §7).
 - **Infisical UI:** solo interna. `kubectl -n jin port-forward svc/infisical 8080:8080` → `http://localhost:8080`. No se expone por el túnel.
 - **Postgres/Redis compartidos con Infisical:** el init de Postgres crea la DB `infisical`; Redis se comparte con password. A este presupuesto de RAM no hay sitio para instancias dedicadas.

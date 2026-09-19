@@ -70,8 +70,8 @@ spec:
           # exactos de la tabla, no aproximados.
           resources:
             requests:
-              cpu: 100m
-              memory: 256Mi
+              cpu: 50m
+              memory: 192Mi
             limits:
-              cpu: 400m
-              memory: 512Mi
+              cpu: 300m
+              memory: 384Mi

@@ -1,5 +1,5 @@
 # Defaults y máximos por contenedor según AGENTS.md 4.4:
-# default 512Mi/500m, máximo 2Gi/1500m, limits.memory ≤ 3× requests.memory.
+# default 512Mi/500m, máximo 1Gi/1000m, limits.memory ≤ 3× requests.memory.
 apiVersion: v1
 kind: LimitRange
 metadata:
@@ -15,7 +15,7 @@ spec:
         cpu: 250m
         memory: 256Mi
       max:
-        cpu: "1500m"
-        memory: 2Gi
+        cpu: "1000m"
+        memory: 1Gi
       maxLimitRequestRatio:
         memory: "3"

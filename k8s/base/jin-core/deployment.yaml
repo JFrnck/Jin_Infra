@@ -76,10 +76,10 @@ spec:
           # exactos de la tabla, no aproximados.
           resources:
             requests:
-              cpu: 200m
+              cpu: 150m
               memory: 512Mi
             limits:
-              cpu: 800m
+              cpu: 600m
               memory: 1Gi
           volumeMounts:
             - name: core-data
