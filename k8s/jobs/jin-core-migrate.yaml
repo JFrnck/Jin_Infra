@@ -1,0 +1,60 @@
+# Migraciones de DB de jin-core (drizzle). Job FUERA de k8s/overlays/production
+# a propósito: los Jobs son inmutables (spec.template no se puede cambiar) y
+# Flux fallaría al reconciliar en cada pasada dentro del overlay. Se aplica con
+# scripts/migrate-db.sh (lo llama 04-apply-manifests.sh y se corre a mano
+# antes de cada release que traiga migraciones nuevas).
+#
+# La imagen NO está pinneada acá: migrate-db.sh reemplaza __JIN_CORE_IMAGE__
+# con la imagen que tiene el Deployment jin-core en ese momento, para que
+# migrador y servidor sean siempre el mismo build (una sola fuente de verdad).
+#
+# Solo necesita DATABASE_URL (Jin_Core PR #35): los secretos de API viven en
+# Infisical y este Job no pasa por loadSecrets(). Se toma UNA clave del Secret
+# (secretKeyRef), no envFrom -- el migrador no debe ver REDIS_URL ni nada más.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: jin-core-migrate
+  namespace: jin
+  labels:
+    app.kubernetes.io/name: jin-core-migrate
+spec:
+  backoffLimit: 3
+  ttlSecondsAfterFinished: 3600
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: jin-core-migrate
+    spec:
+      restartPolicy: Never
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      imagePullSecrets:
+        - name: ghcr-pull-secret
+      containers:
+        - name: migrate
+          image: __JIN_CORE_IMAGE__
+          command: ["node", "dist/src/db/migrate.js"]
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: jin-core-secrets
+                  key: DATABASE_URL
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 150m
+              memory: 256Mi
