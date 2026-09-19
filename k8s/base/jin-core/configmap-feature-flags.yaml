@@ -1,0 +1,28 @@
+# Feature flags en caliente (BLUEPRINT §12.3, Fase 9.5). Se monta como
+# volumen sobre config/feature-flags.yaml DENTRO de la imagen (no
+# envFrom -- es un archivo que jin-core re-lee en SIGHUP, nunca env
+# vars). El contenido de acá pisa el default que trae la imagen.
+#
+# Cambiar en producción: editar este archivo -> PR -> merge -> Flux lo
+# aplica -> `kubectl -n jin exec deploy/jin-core -- kill -HUP 1` (el
+# kubelet sincroniza el volumen en ~60s, pero jin-core no relee el
+# archivo solo -- necesita la señal). El LLM no tiene ningún camino
+# hacia este archivo.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: jin-core-feature-flags
+  namespace: jin
+data:
+  feature-flags.yaml: |
+    integrations:
+      canvas:
+        enabled: true
+      google:
+        enabled: true
+      mcp:
+        enabled: true
+      telegram:
+        enabled: true
+    modelRouting: {}
+    hitlOverrides: {}
