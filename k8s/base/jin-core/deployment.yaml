@@ -64,6 +64,13 @@ spec:
               value: /data/memory/memory.db
             - name: EXECUTOR_BASE_URL
               value: http://executor.jin-executor.svc.cluster.local:3001
+            # Sin esta variable TelegramBotService NUNCA llama a setWebhook
+            # (solo lo hace `if (this.webhookUrl)`), así que el bot no recibe
+            # updates. No es un secreto -- el secreto es TELEGRAM_WEBHOOK_SECRET
+            # (Infisical), que el controller valida en cada POST. El path lo
+            # expone jin-core/ingressroute.yaml (solo /telegram/webhook).
+            - name: TELEGRAM_WEBHOOK_URL
+              value: https://jin.jeanfranck.com/telegram/webhook
             # Fase 8.1: no secretos -- ver Jin_Core/src/config/env.schema.ts.
             - name: INFISICAL_ENABLED
               value: "true"
