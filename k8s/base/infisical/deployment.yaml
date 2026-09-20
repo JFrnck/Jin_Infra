@@ -28,6 +28,32 @@ spec:
         runAsUser: 1000
         runAsGroup: 1000
         runAsNonRoot: true
+      # La imagen de Infisical NO migra su base de datos al arrancar: sin este
+      # paso la BD `infisical` queda con 0 tablas y el pod entra en
+      # CrashLoopBackOff en su primera consulta (encontrado en el primer
+      # despliegue real, 2026-09-20). `migration:latest` (knex) es idempotente:
+      # en un arranque normal dice "Already up to date" y sale en segundos, y en
+      # una actualización de versión aplica las migraciones nuevas antes de que
+      # el pod nuevo reciba tráfico.
+      initContainers:
+        - name: migrate
+          image: docker.io/infisical/infisical:v0.99.0-postgres
+          command: ["npm", "run", "migration:latest"]
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          envFrom:
+            - secretRef:
+                name: infisical-secrets
+          resources:
+            requests:
+              cpu: 50m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 768Mi
       containers:
         - name: infisical
           image: docker.io/infisical/infisical:v0.99.0-postgres
