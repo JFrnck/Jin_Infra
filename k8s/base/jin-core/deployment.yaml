@@ -46,7 +46,7 @@ spec:
         - name: jin-core
           # Tag = SHA del commit en main publicado por el CI de Jin_Core
           # (job "docker"). Actualizar en el próximo release real.
-          image: ghcr.io/jfrnck/jin-core:5aa989a294ef603181edf4616bb9fe645941d092
+          image: ghcr.io/jfrnck/jin-core:d772183567b629003ffa895b31ed332ac2ece065
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
