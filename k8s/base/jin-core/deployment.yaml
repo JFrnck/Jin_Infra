@@ -60,6 +60,12 @@ spec:
           env:
             - name: PORT
               value: "3000"
+            # Sin TZ el proceso corre en UTC: el cron de las 00:00 (Shadowing),
+            # el de las 06:00 (alerta matutina, Fase 9.4) y el reset diario del
+            # budget (`todayLocalDate`) usan hora LOCAL del proceso. Lima, igual
+            # que los CronJobs de backup. Para mudarse a Canadá: cambiar esta línea.
+            - name: TZ
+              value: America/Lima
             - name: MEMORY_DB_PATH
               value: /data/memory/memory.db
             - name: EXECUTOR_BASE_URL
