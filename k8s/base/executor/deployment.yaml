@@ -57,6 +57,13 @@ spec:
               value: "true"
             - name: INFISICAL_ENVIRONMENT
               value: prod
+            # OBLIGATORIA: sin ella el SDK de Infisical apunta a
+            # `app.infisical.com` (la nube de un TERCERO) y le manda las
+            # credenciales de la identidad de máquina. Pasó en el primer
+            # despliegue real (2026-09-21). El default de Zod no cubre este
+            # camino: `loadSecrets()` corre antes de que Nest exista.
+            - name: INFISICAL_SITE_URL
+              value: http://infisical.jin.svc.cluster.local:8080
             # ID del proyecto `jin` de Infisical (no es un secreto) -- ver el
             # Deployment de jin-core. Credenciales: Secret
             # jin-executor-infisical-auth (08-seed-...sh).
