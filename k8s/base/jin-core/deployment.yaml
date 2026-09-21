@@ -82,15 +82,12 @@ spec:
               value: "true"
             - name: INFISICAL_ENVIRONMENT
               value: prod
-            # INFISICAL_PROJECT_ID no tiene un valor real todavía: se
-            # completa al ejecutar el paso manual del runbook
-            # (crear el proyecto + identidades de máquina en Infisical,
-            # ver docs/runbooks/oci-deploy-prep.md). Placeholder a
-            # propósito -- sin esto el pod nunca llega a Ready cuando
-            # INFISICAL_ENABLED=true, que es la señal correcta de que
-            # falta ese paso.
+            # ID del proyecto `jin` de Infisical (self-hosted; creado a mano en
+            # el paso §7.6 del runbook). No es un secreto: solo identifica a qué
+            # proyecto conectarse; las credenciales de la identidad de máquina
+            # viven en el Secret jin-core-infisical-auth (08-seed-...sh).
             - name: INFISICAL_PROJECT_ID
-              value: PENDIENTE_CREAR_PROYECTO_INFISICAL
+              value: 76a57a5b-6707-41f1-b85b-559229b036a7
           ports:
             - name: http
               containerPort: 3000
