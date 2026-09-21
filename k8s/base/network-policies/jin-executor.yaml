@@ -37,6 +37,20 @@ spec:
   policyTypes:
     - Egress
   egress:
+    # Fase 8.1: Infisical (sus secretos de Modal) -- el ipBlock de abajo excluye
+    # los CIDRs del clúster a propósito, así que hace falta esta regla explícita.
+    # Solo el pod de Infisical y solo el 8080: Postgres, Redis y jin-core siguen
+    # fuera de alcance.
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: jin
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: infisical
+      ports:
+        - protocol: TCP
+          port: 8080
     - to:
         - namespaceSelector:
             matchLabels:
