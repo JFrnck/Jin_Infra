@@ -41,6 +41,32 @@ spec:
             matchLabels:
               kubernetes.io/metadata.name: kube-system
 ---
+# Fase 8.1: el Executor lee SUS secretos (Modal) de Infisical al arrancar, y
+# Infisical vive acá. Sin esta regla el pod queda en CrashLoopBackOff con
+# `fetch failed` (visto en el primer despliegue real, 2026-09-21): la política
+# se escribió antes de que el Executor dependiera de Infisical y nunca se
+# actualizó. Se abre lo MÍNIMO: solo hacia el pod de Infisical y solo al 8080
+# -- Postgres y Redis siguen inalcanzables desde jin-executor.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-infisical-from-executor
+  namespace: jin
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: infisical
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: jin-executor
+      ports:
+        - protocol: TCP
+          port: 8080
+---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
