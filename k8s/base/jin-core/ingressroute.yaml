@@ -11,8 +11,26 @@ spec:
   entryPoints:
     - websecure
   routes:
+    # El puente Claude Code ↔ owner (ADR 0012) NO sale a internet. El CLI
+    # `jin-relay` corre en el nodo y llega a jin-core:3000 por la red del
+    # clúster, así que no necesita esta puerta.
+    #
+    # Va ANTES y con prioridad explícita: la regla de abajo es PathPrefix(`/api`)
+    # y se llevaría /api/relay. Traefik ordena por longitud de regla y esta ya
+    # ganaría sola, pero una precedencia implícita no es una frontera de
+    # seguridad — si alguien acorta la otra regla, esto deja de cumplirse en
+    # silencio.
+    - match: Host(`jin.jeanfranck.com`) && PathPrefix(`/api/relay`)
+      kind: Rule
+      priority: 100
+      middlewares:
+        - name: deny-public
+      services:
+        - name: jin-core
+          port: 3000
     - match: Host(`jin.jeanfranck.com`) && PathPrefix(`/api`)
       kind: Rule
+      priority: 10
       services:
         - name: jin-core
           port: 3000
@@ -23,6 +41,10 @@ spec:
     # el controller con X-Telegram-Bot-Api-Secret-Token (TELEGRAM_WEBHOOK_SECRET).
     - match: Host(`jin.jeanfranck.com`) && Path(`/telegram/webhook`)
       kind: Rule
+      # Explícita como las otras dos: mezclar prioridades puestas a mano con
+      # prioridades implícitas (Traefik las deduce de la longitud de la regla)
+      # hace que el orden real dependa de cuánto mide el texto del match.
+      priority: 50
       services:
         - name: jin-core
           port: 3000

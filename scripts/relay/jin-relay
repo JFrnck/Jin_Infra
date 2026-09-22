@@ -1,0 +1,206 @@
+#!/usr/bin/env bash
+# jin-relay -- puente Claude Code -> owner (ADR 0012).
+#
+# Lo usa una sesión de Claude Code corriendo en la VM para avisar al owner por
+# Telegram y, si hace falta, preguntarle con botones y esperar la respuesta.
+#
+#   jin-relay send "terminé el deploy, 14 pods OK"
+#   jin-relay ask "¿repino la imagen ahora?" --option "Sí, repina" --option "Espera"
+#   jin-relay ask "¿sigo?" --option "Sí" --option "No" --wait
+#   jin-relay inbox
+#
+# NO aprueba nada de Jin. El chat de este bot no tiene maquinaria de
+# aprobación y el token de acá no abre ninguna otra puerta de la API
+# (ver Jin_Core/src/relay/relay.isolation.spec.ts).
+#
+# Requiere: el token en ~/.jin-relay-token (0600) y alcance de red a jin-core.
+# Bash + curl, sin build ni node_modules: tiene que funcionar en una VM pelada.
+set -euo pipefail
+
+TOKEN_FILE="${JIN_RELAY_TOKEN_FILE:-${HOME}/.jin-relay-token}"
+BASE_URL="${JIN_RELAY_BASE_URL:-http://jin-core.jin.svc.cluster.local:3000}"
+WAIT_TIMEOUT="${JIN_RELAY_WAIT_TIMEOUT:-1800}"
+WAIT_INTERVAL="${JIN_RELAY_WAIT_INTERVAL:-5}"
+
+die() {
+  echo "!! $*" >&2
+  exit 1
+}
+
+usage() {
+  sed -n '2,15p' "$0" | sed 's|^# \{0,1\}||'
+  exit "${1:-0}"
+}
+
+read_token() {
+  [[ -f "${TOKEN_FILE}" ]] || die "No existe ${TOKEN_FILE}. Crealo con el RELAY_TOKEN (chmod 600)."
+
+  # Un token legible por todo el mundo en una VM compartida es el token de
+  # otro. Se avisa y se sigue: bloquear aquí dejaría a Claude sin poder
+  # reportar justo cuando algo va mal.
+  local perms
+  perms="$(stat -c '%a' "${TOKEN_FILE}" 2>/dev/null || stat -f '%Lp' "${TOKEN_FILE}")"
+  if [[ "${perms}" != "600" ]]; then
+    echo "!! ${TOKEN_FILE} tiene permisos ${perms}; deberían ser 600." >&2
+  fi
+
+  TOKEN="$(tr -d '\r\n' < "${TOKEN_FILE}")"
+  [[ -n "${TOKEN}" ]] || die "${TOKEN_FILE} está vacío."
+}
+
+# Escapa una cadena como literal JSON usando las herramientas que haya.
+# Sin esto, un mensaje con comillas o un salto de línea rompe el body -- y los
+# mensajes de Claude llevan rutas, comandos y fragmentos de log todo el tiempo.
+json_string() {
+  if command -v jq >/dev/null 2>&1; then
+    printf '%s' "$1" | jq -Rs .
+  else
+    python3 -c 'import json,sys; print(json.dumps(sys.stdin.read()))' <<<"$1"
+  fi
+}
+
+# Extrae un campo de primer nivel de la respuesta. jq si está; si no, python3.
+json_field() {
+  local body="$1" field="$2"
+  if command -v jq >/dev/null 2>&1; then
+    printf '%s' "${body}" | jq -r --arg f "${field}" '.[$f] // empty'
+  else
+    python3 -c 'import json,sys; d=json.load(sys.stdin); v=d.get(sys.argv[1]); print("" if v is None else v)' \
+      "${field}" <<<"${body}"
+  fi
+}
+
+# curl con el token. Separa cuerpo y código para poder distinguir los errores
+# que importan (429 cuota, 401 token, 503 puente apagado) de un fallo de red.
+api() {
+  local method="$1" path="$2" data="${3:-}"
+  local response status
+  local args=(-sS -X "${method}" -H "Authorization: Bearer ${TOKEN}"
+    -w '\n%{http_code}' --max-time 30 "${BASE_URL}${path}")
+  [[ -n "${data}" ]] && args+=(-H 'Content-Type: application/json' -d "${data}")
+
+  response="$(curl "${args[@]}")" || die "No se pudo alcanzar ${BASE_URL}. ¿Está jin-core arriba?"
+  status="${response##*$'\n'}"
+  API_BODY="${response%$'\n'*}"
+
+  case "${status}" in
+    2*) return 0 ;;
+    401) die "Token rechazado. Revisá ${TOKEN_FILE} contra RELAY_TOKEN en Infisical." ;;
+    429) die "Cuota alcanzada (30 mensajes/hora). Esperá o agrupá los avisos." ;;
+    503) die "El puente está apagado: faltan TELEGRAM_RELAY_BOT_TOKEN/RELAY_TOKEN en Infisical." ;;
+    *) die "jin-core respondió ${status}: ${API_BODY}" ;;
+  esac
+}
+
+# Construye el body y manda. $1 = texto; el resto, las opciones.
+post_message() {
+  local body="$1"
+  shift
+  local payload options=""
+
+  if (($# > 0)); then
+    local opt
+    for opt in "$@"; do
+      options+="${options:+,}$(json_string "${opt}")"
+    done
+    payload="{\"body\":$(json_string "${body}"),\"options\":[${options}]}"
+  else
+    payload="{\"body\":$(json_string "${body}")}"
+  fi
+
+  api POST /api/relay/messages "${payload}"
+  json_field "${API_BODY}" id
+}
+
+# Espera la respuesta del owner. Devuelve 1 al agotarse el tiempo, para que
+# quien llame distinga "dijo que no" de "no contestó" -- no son lo mismo.
+wait_for_answer() {
+  local id="$1" deadline
+  deadline=$(($(date +%s) + WAIT_TIMEOUT))
+
+  while (($(date +%s) < deadline)); do
+    api GET "/api/relay/messages/${id}/answer"
+    if [[ "$(json_field "${API_BODY}" answered)" == "true" ]]; then
+      json_field "${API_BODY}" body
+      return 0
+    fi
+    sleep "${WAIT_INTERVAL}"
+  done
+
+  echo "!! Sin respuesta tras ${WAIT_TIMEOUT}s." >&2
+  return 1
+}
+
+cmd_send() {
+  [[ $# -ge 1 ]] || die "Uso: jin-relay send \"mensaje\""
+  read_token
+  post_message "$1"
+}
+
+cmd_ask() {
+  local question="" wait=false
+  local options=()
+
+  while (($# > 0)); do
+    case "$1" in
+      --option)
+        [[ $# -ge 2 ]] || die "--option necesita un valor."
+        options+=("$2")
+        shift 2
+        ;;
+      --wait)
+        wait=true
+        shift
+        ;;
+      -*) die "Opción desconocida: $1" ;;
+      *)
+        [[ -z "${question}" ]] || die "Solo se admite una pregunta."
+        question="$1"
+        shift
+        ;;
+    esac
+  done
+
+  [[ -n "${question}" ]] || die "Uso: jin-relay ask \"pregunta\" --option A --option B [--wait]"
+  ((${#options[@]} > 0)) || die "Una pregunta necesita al menos una --option."
+  ((${#options[@]} <= 5)) || die "Máximo 5 opciones (no entran cómodas en el teclado de Telegram)."
+
+  read_token
+  local id
+  id="$(post_message "${question}" "${options[@]}")"
+  [[ -n "${id}" ]] || die "jin-core no devolvió un id."
+
+  if [[ "${wait}" == true ]]; then
+    wait_for_answer "${id}"
+  else
+    echo "${id}"
+  fi
+}
+
+cmd_inbox() {
+  read_token
+  api GET /api/relay/inbox
+  # Los mensajes se marcan consumidos al leerlos: se imprimen tal cual para no
+  # perder ninguno si falla el formateo.
+  if command -v jq >/dev/null 2>&1; then
+    printf '%s' "${API_BODY}" | jq -r '.messages[] | "[\(.createdAt)] \(.body)"'
+  else
+    printf '%s\n' "${API_BODY}"
+  fi
+}
+
+main() {
+  [[ $# -ge 1 ]] || usage 1
+  local command="$1"
+  shift
+
+  case "${command}" in
+    send) cmd_send "$@" ;;
+    ask) cmd_ask "$@" ;;
+    inbox) cmd_inbox "$@" ;;
+    -h | --help | help) usage 0 ;;
+    *) die "Comando desconocido: ${command}. Usá send, ask o inbox." ;;
+  esac
+}
+
+main "$@"
