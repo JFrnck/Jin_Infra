@@ -37,10 +37,9 @@ spec:
         - name: ghcr-pull-secret
       containers:
         - name: jin-web
-          # Tag = SHA del commit en main publicado por el CI de Jin_Web (job
-          # "docker"). Placeholder hasta el primer merge real -- actualizar
-          # antes de aplicar (ver plan de despliegue).
-          image: ghcr.io/jfrnck/jin-web:REPLACE_WITH_MERGE_SHA
+          # Tag = SHA del commit de merge en main publicado por el CI de
+          # Jin_Web (job "docker", run #33, success) -- Jin_Web PR #14.
+          image: ghcr.io/jfrnck/jin-web:9636f5358388a695d0968925226f215ca8f93e31
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
