@@ -1,7 +1,8 @@
 # Ruteo estático (a diferencia de las IngressRoutes dinámicas que crea
 # Jin_Executor por preview — ver ADR 0006 punto 7 / k8s.service.ts):
-# jin.jeanfranck.com/api y /telegram/webhook -> jin-core. El resto del host (dashboard) lo
-# sirve Cloudflare Pages directamente, fuera del clúster (BLUEPRINT 8.1).
+# jin.jeanfranck.com/api, /telegram/webhook y /socket.io -> jin-core; el
+# resto del host -> jin-web (dashboard, dentro del clúster — reemplaza a
+# Cloudflare Pages, ver Jin_Web/.github/workflows/ci.yml).
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
@@ -48,5 +49,29 @@ spec:
       services:
         - name: jin-core
           port: 3000
+    # Hallazgo real (despliegue de Jin_Web en la VM): ni RealtimeGateway ni
+    # ChatGateway (Jin_Core) fijan un `path` custom en @WebSocketGateway(),
+    # así que socket.io usa su default `/socket.io/` -- un path que ninguna
+    # regla de acá cubría. En producción el dashboard se hubiera quedado sin
+    # tiempo real (badge "EN VIVO", avisos de pending-approval:new, chat por
+    # WS) de forma completamente silenciosa. Prioridad explícita, mismo
+    # criterio que las demás reglas de este archivo.
+    - match: Host(`jin.jeanfranck.com`) && PathPrefix(`/socket.io`)
+      kind: Rule
+      priority: 20
+      services:
+        - name: jin-core
+          port: 3000
+    # Catch-all del dashboard (Jin_Web) -- tiene que perder contra CUALQUIER
+    # otra regla de este archivo o se comería sus requests. Prioridad
+    # explícita y la más baja de todas, por el mismo motivo que las de
+    # arriba: una precedencia implícita por longitud de match no es una
+    # frontera confiable.
+    - match: Host(`jin.jeanfranck.com`) && PathPrefix(`/`)
+      kind: Rule
+      priority: 1
+      services:
+        - name: jin-web
+          port: 80
   tls:
     secretName: wildcard-jeanfranck-com-tls

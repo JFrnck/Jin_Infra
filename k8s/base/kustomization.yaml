@@ -6,6 +6,7 @@ resources:
   - network-policies
   - executor
   - jin-core
+  - jin-web
   - postgres
   - redis
   - infisical
