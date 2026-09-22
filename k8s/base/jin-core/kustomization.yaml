@@ -5,4 +5,5 @@ resources:
   - deployment.yaml
   - service.yaml
   - ingressroute.yaml
+  - middleware-deny-public.yaml
   - configmap-feature-flags.yaml

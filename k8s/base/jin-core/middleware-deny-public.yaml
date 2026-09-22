@@ -1,0 +1,19 @@
+# Middleware de denegación para rutas que NO deben salir a internet.
+#
+# Traefik no trae un middleware "deny": se consigue con un ipAllowList cuyo
+# rango no puede coincidir nunca. El tráfico llega desde el pod de cloudflared,
+# así que su IP de origen jamás es loopback y Traefik responde 403 antes de
+# tocar jin-core.
+#
+# Se prefiere esto a simplemente "no enrutar" porque la regla de jin-core-api
+# es `PathPrefix(/api)`: cualquier ruta nueva bajo /api queda expuesta por
+# omisión. Aquí la exclusión es explícita y se ve en el manifiesto.
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: deny-public
+  namespace: jin
+spec:
+  ipAllowList:
+    sourceRange:
+      - 127.0.0.1/32
