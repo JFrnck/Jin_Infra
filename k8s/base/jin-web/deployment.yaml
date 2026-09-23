@@ -38,9 +38,9 @@ spec:
       containers:
         - name: jin-web
           # Tag = SHA del commit de merge en main publicado por el CI de
-          # Jin_Web (job "docker") -- Jin_Web PR #15 (sección "Claude Code"
-          # del dashboard, consume Jin_Core#49).
-          image: ghcr.io/jfrnck/jin-web:a90866a165277570299a09f5e88c240526b101b7
+          # Jin_Web (job "docker") -- Jin_Web PR #16 (nav móvil fijo +
+          # NavSheet como única fuente, fix real de iPhone 16 Pro Max).
+          image: ghcr.io/jfrnck/jin-web:d8dbbfe40d2cb429d737f422579831579e920038
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
