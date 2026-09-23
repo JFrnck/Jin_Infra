@@ -38,9 +38,10 @@ spec:
       containers:
         - name: jin-web
           # Tag = SHA del commit de merge en main publicado por el CI de
-          # Jin_Web (job "docker") -- Jin_Web PR #16 (nav móvil fijo +
-          # NavSheet como única fuente, fix real de iPhone 16 Pro Max).
-          image: ghcr.io/jfrnck/jin-web:d8dbbfe40d2cb429d737f422579831579e920038
+          # Jin_Web (job "docker") -- Jin_Web PR #17: #16 (position:fixed)
+          # seguía roto en un iPhone real, reemplazado por el patrón de
+          # scroll contenido (solo <main> scrollea, nada depende de fixed).
+          image: ghcr.io/jfrnck/jin-web:e48e7f9ebabbcfe4f0c5fb034c547d08874c2883
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
