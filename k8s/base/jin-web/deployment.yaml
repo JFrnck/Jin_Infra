@@ -38,8 +38,9 @@ spec:
       containers:
         - name: jin-web
           # Tag = SHA del commit de merge en main publicado por el CI de
-          # Jin_Web (job "docker", run #33, success) -- Jin_Web PR #14.
-          image: ghcr.io/jfrnck/jin-web:9636f5358388a695d0968925226f215ca8f93e31
+          # Jin_Web (job "docker") -- Jin_Web PR #15 (sección "Claude Code"
+          # del dashboard, consume Jin_Core#49).
+          image: ghcr.io/jfrnck/jin-web:a90866a165277570299a09f5e88c240526b101b7
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
