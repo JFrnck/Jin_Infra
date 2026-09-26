@@ -41,7 +41,7 @@ spec:
           # Jin_Web (job "docker") -- Jin_Web PR #17: #16 (position:fixed)
           # seguía roto en un iPhone real, reemplazado por el patrón de
           # scroll contenido (solo <main> scrollea, nada depende de fixed).
-          image: ghcr.io/jfrnck/jin-web:e48e7f9ebabbcfe4f0c5fb034c547d08874c2883
+          image: ghcr.io/jfrnck/jin-web:62026e7521bfb4d6a5e2b8355dac3d3c5260ee59
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
