@@ -42,6 +42,14 @@ rules:
   - apiGroups: [""]
     resources: ["pods/exec"]
     verbs: ["create", "get"]
+  # `pods/proxy` (vista previa en vivo de un servidor de la sesión, ADR 0016):
+  # el Executor no alcanza los pods directamente (su NetworkPolicy excluye los
+  # CIDRs del clúster), así que las peticiones HTTP a un puerto del pod pasan
+  # por el API server. Un verbo por método HTTP. Acotado a agents-sandbox; el
+  # Executor valida la ruta y solo apunta a pods de sesión de terminal.
+  - apiGroups: [""]
+    resources: ["pods/proxy"]
+    verbs: ["get", "create", "update", "patch", "delete"]
   - apiGroups: [""]
     resources: ["services"]
     verbs: ["create", "get", "list", "delete"]
