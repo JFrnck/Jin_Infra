@@ -1,0 +1,50 @@
+# Verdaccio: proxy de npm del clúster (ADR 0016). Las sesiones de terminal
+# del owner instalan paquetes por acá; es lo ÚNICO a lo que pueden salir.
+#
+# - Solo lectura: nadie puede publicar ni registrarse (max_users -1 apaga el
+#   alta, y sin usuarios autenticados `publish: $authenticated` no lo cumple
+#   nadie).
+# - Solo habla con el registro de npm (un único uplink).
+# - Sin interfaz web ni auditoría (no hace falta y agregan llamadas).
+storage: /verdaccio/storage/data
+web:
+  enable: false
+auth:
+  htpasswd:
+    file: /verdaccio/storage/htpasswd
+    max_users: -1
+uplinks:
+  npmjs:
+    url: https://registry.npmjs.org/
+    timeout: 60s
+    # Con 3 fallos y 5 min, unos pocos cortes de TLS bajo ráfaga dejaban el
+    # uplink "offline" y el `npm install` fallaba con 500 (visto en K3s real).
+    max_fails: 20
+    fail_timeout: 10s
+    # Reusar conexiones: un install abre decenas de peticiones y cada
+    # handshake TLS nuevo es una oportunidad de corte.
+    agent_options:
+      keepAlive: true
+      maxSockets: 10
+      maxFreeSockets: 5
+packages:
+  '@*/*':
+    access: $all
+    publish: $authenticated
+    unpublish: $authenticated
+    proxy: npmjs
+  '**':
+    access: $all
+    publish: $authenticated
+    unpublish: $authenticated
+    proxy: npmjs
+middlewares:
+  audit:
+    enabled: false
+server:
+  keepAliveTimeout: 60
+max_body_size: 5mb
+log:
+  type: stdout
+  format: pretty
+  level: warn

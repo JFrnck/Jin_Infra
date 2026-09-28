@@ -35,6 +35,13 @@ rules:
   - apiGroups: [""]
     resources: ["pods/log"]
     verbs: ["get"]
+  # `pods/exec` (ADR 0016, sesiones de terminal): correr comandos dentro de un
+  # pod que el Executor ya creó. Es un subrecurso distinto de `pods`. `create`
+  # es el verbo de `exec`; `get` lo pide la variante por WebSocket en algunos
+  # apiservers. Sigue acotado a agents-sandbox y sin Secrets/ConfigMaps.
+  - apiGroups: [""]
+    resources: ["pods/exec"]
+    verbs: ["create", "get"]
   - apiGroups: [""]
     resources: ["services"]
     verbs: ["create", "get", "list", "delete"]
