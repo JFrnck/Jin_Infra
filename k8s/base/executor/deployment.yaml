@@ -40,7 +40,7 @@ spec:
         - name: executor
           # Tag = SHA del commit en main publicado por el CI de
           # Jin_Executor (job "docker"). Actualizar en el próximo release real.
-          image: ghcr.io/jfrnck/jin-executor:b33508b6c35fa0e4cb2b692e5cafe2b647c8d61c
+          image: ghcr.io/jfrnck/jin-executor:b5164d621b6f249d91fee7456cfadd38dd83784e
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
