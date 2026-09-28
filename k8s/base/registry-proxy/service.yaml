@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: verdaccio
+  namespace: registry-proxy
+  labels:
+    app.kubernetes.io/name: verdaccio
+spec:
+  selector:
+    app.kubernetes.io/name: verdaccio
+  ports:
+    - name: http
+      port: 4873
+      targetPort: http

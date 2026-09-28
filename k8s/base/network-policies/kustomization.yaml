@@ -5,4 +5,5 @@ resources:
   - jin.yaml
   - jin-executor.yaml
   - agents-sandbox.yaml
+  - registry-proxy.yaml
   - observability.yaml

@@ -1,0 +1,81 @@
+# Proxy de npm (ADR 0016): solo recibe de las sesiones de terminal y solo sale
+# al registro de npm (443) y a DNS.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all
+  namespace: registry-proxy
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-from-terminal-sessions
+  namespace: registry-proxy
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: verdaccio
+  policyTypes:
+    - Ingress
+  ingress:
+    # Solo pods de sesión de terminal (label que pone el Executor), no
+    # cualquier pod de agents-sandbox (previews, runCode).
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: agents-sandbox
+          podSelector:
+            matchLabels:
+              jin.io/type: terminal
+      ports:
+        - protocol: TCP
+          port: 4873
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-dns-egress
+  namespace: registry-proxy
+spec:
+  podSelector: {}
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-npm-registry-egress
+  namespace: registry-proxy
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: verdaccio
+  policyTypes:
+    - Egress
+  egress:
+    # HTTPS a internet, sin los CIDRs del clúster (mismo criterio que el
+    # egress del Executor): el proxy no alcanza a ningún otro pod.
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except:
+              - 10.42.0.0/16
+              - 10.43.0.0/16
+      ports:
+        - protocol: TCP
+          port: 443

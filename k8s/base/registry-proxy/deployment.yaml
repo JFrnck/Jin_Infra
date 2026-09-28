@@ -1,0 +1,86 @@
+# Proxy de npm (Verdaccio) para las sesiones de terminal del owner (ADR 0016).
+# Es la ÚNICA salida de red de esos pods: ver network-policies/registry-proxy.yaml
+# y la NetworkPolicy por sesión que crea el Executor.
+#
+# La caché vive en un emptyDir: si el pod se reinicia, se vuelve a llenar
+# desde npm (un `npm install` en frío tarda ~40 s). No hay nada que respaldar.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: verdaccio
+  namespace: registry-proxy
+  labels:
+    app.kubernetes.io/name: verdaccio
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: verdaccio
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: verdaccio
+    spec:
+      automountServiceAccountToken: false
+      # La imagen oficial corre como uid 10001.
+      securityContext:
+        runAsUser: 10001
+        runAsGroup: 65533
+        fsGroup: 65533
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: verdaccio
+          # Pinneada (nunca `latest`), multi-arch (la VM es ARM64).
+          image: docker.io/verdaccio/verdaccio:6.1.6
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          ports:
+            - name: http
+              containerPort: 4873
+          env:
+            - name: VERDACCIO_PORT
+              value: "4873"
+            # V8 limpia antes de llegar al límite del pod: sin esto, resolver un
+            # `npm install` con paquetes grandes (eslint, @types/node) lo mataba
+            # por OOM (384Mi) y el install se colgaba. Encontrado en K3s real.
+            - name: NODE_OPTIONS
+              value: "--max-old-space-size=640"
+          readinessProbe:
+            httpGet:
+              path: /-/ping
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /-/ping
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          volumeMounts:
+            - name: config
+              mountPath: /verdaccio/conf
+              readOnly: true
+            - name: storage
+              mountPath: /verdaccio/storage
+          resources:
+            requests:
+              cpu: 50m
+              memory: 192Mi
+            limits:
+              cpu: 1000m
+              memory: 1Gi
+      volumes:
+        - name: config
+          configMap:
+            name: verdaccio-config
+        - name: storage
+          emptyDir:
+            sizeLimit: 2Gi

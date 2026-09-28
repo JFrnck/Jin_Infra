@@ -5,6 +5,7 @@ resources:
   - namespaces
   - network-policies
   - executor
+  - registry-proxy
   - jin-core
   - jin-web
   - postgres
