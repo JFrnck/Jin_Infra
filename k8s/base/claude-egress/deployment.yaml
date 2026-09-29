@@ -1,0 +1,86 @@
+# Proxy de salida de Claude Code (ADR 0017): el ÚNICO camino a internet de los
+# pods de terminal que el owner abre con "Habilitar Claude Code", y solo hacia
+# los dominios de Anthropic (ALLOWED_HOSTS). Es un túnel TCP que NO descifra el
+# tráfico. El código vive en un ConfigMap (server.mjs, con sus pruebas al lado).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: claude-egress
+  namespace: claude-egress
+  labels:
+    app.kubernetes.io/name: claude-egress
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: claude-egress
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: claude-egress
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: proxy
+          # Pinneada (nunca `latest`), multi-arch (la VM es ARM64). La misma que
+          # usan las sesiones de terminal: ya está en el nodo.
+          image: docker.io/library/node:22-alpine
+          command: ["node", "/app/server.mjs"]
+          env:
+            - name: PORT
+              value: "3128"
+            # Se ajusta tras la primera prueba real (qué dominios pide Claude Code
+            # con CLAUDE_CODE_OAUTH_TOKEN): más vale empezar corto.
+            - name: ALLOWED_HOSTS
+              value: "api.anthropic.com,claude.ai,console.anthropic.com"
+            - name: MAX_TUNNELS
+              value: "20"
+            - name: MAX_LIFETIME_SECONDS
+              value: "3600"
+            - name: IDLE_TIMEOUT_SECONDS
+              value: "600"
+          ports:
+            - name: proxy
+              containerPort: 3128
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          readinessProbe:
+            tcpSocket:
+              port: proxy
+            initialDelaySeconds: 3
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: proxy
+            initialDelaySeconds: 10
+            periodSeconds: 20
+          volumeMounts:
+            - name: code
+              mountPath: /app
+              readOnly: true
+          resources:
+            requests:
+              cpu: 20m
+              memory: 48Mi
+            limits:
+              cpu: 300m
+              memory: 128Mi
+      volumes:
+        - name: code
+          configMap:
+            name: claude-egress-code

@@ -6,6 +6,7 @@ resources:
   - network-policies
   - executor
   - registry-proxy
+  - claude-egress
   - jin-core
   - jin-web
   - postgres

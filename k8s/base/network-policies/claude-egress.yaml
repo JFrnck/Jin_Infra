@@ -1,0 +1,87 @@
+# Proxy de salida de Claude Code (ADR 0017): solo recibe de los pods de terminal
+# que el owner abrió con "Habilitar Claude Code" y solo sale a HTTPS público
+# (sin ninguna dirección interna: ni el clúster, ni la red del nodo, ni el
+# endpoint de metadatos) y a DNS. Que un dominio de Anthropic resolviera a algo
+# interno tampoco lo alcanzaría: el propio proxy lo rechaza (server.mjs) y esta
+# política lo corta otra vez.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all
+  namespace: claude-egress
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-from-claude-terminals
+  namespace: claude-egress
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: claude-egress
+  policyTypes:
+    - Ingress
+  ingress:
+    # Los DOS labels: ser una sesión de terminal (label que pone el Executor) y
+    # haber pedido Claude Code (`jin.io/claude`, solo con la aprobación del owner).
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: agents-sandbox
+          podSelector:
+            matchLabels:
+              jin.io/type: terminal
+              jin.io/claude: enabled
+      ports:
+        - protocol: TCP
+          port: 3128
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-dns-egress
+  namespace: claude-egress
+spec:
+  podSelector: {}
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-https-public-egress
+  namespace: claude-egress
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: claude-egress
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except:
+              - 10.0.0.0/8
+              - 172.16.0.0/12
+              - 192.168.0.0/16
+              - 169.254.0.0/16
+              - 100.64.0.0/10
+      ports:
+        - protocol: TCP
+          port: 443
