@@ -50,6 +50,13 @@ rules:
   - apiGroups: [""]
     resources: ["pods/proxy"]
     verbs: ["get", "create", "update", "patch", "delete"]
+  # `persistentvolumeclaims` (ADR 0016 ampliada, 2026-09-28): un PVC por
+  # workspace de terminal que sobrevive a que su pod se destruya. Sin esto el
+  # Executor recibía 403 al listar workspaces y la terminal respondía 502.
+  # Solo agents-sandbox; sin `update`/`patch` (el Executor nunca edita un PVC).
+  - apiGroups: [""]
+    resources: ["persistentvolumeclaims"]
+    verbs: ["create", "get", "list", "delete"]
   - apiGroups: [""]
     resources: ["services"]
     verbs: ["create", "get", "list", "delete"]
