@@ -47,7 +47,7 @@ spec:
           # Tag = SHA del commit en main publicado por el CI de Jin_Core
           # (job "docker") -- Jin_Core#49 (puente Claude↔owner desde el
           # dashboard, /api/bridge/*). Actualizar en el próximo release real.
-          image: ghcr.io/jfrnck/jin-core:c657826c77191d3e5cdac58315fce6e9e0e7d42d
+          image: ghcr.io/jfrnck/jin-core:f7d0f922f760221ded73aa06d3c519880e459abe
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
