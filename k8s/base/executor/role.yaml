@@ -24,7 +24,11 @@ metadata:
 rules:
   - apiGroups: [""]
     resources: ["pods"]
-    verbs: ["create", "get", "list", "delete"]
+    # `patch` (2026-09-29): el Executor anota `jin.io/last-activity-at` en el pod
+    # de terminal (K8sService.patchPodAnnotation) para que el reaper no lo
+    # libere por inactividad mientras el owner lo usa. Sin este verbo cada
+    # anotación daba 403 y la actividad quedaba vieja. Solo agents-sandbox.
+    verbs: ["create", "get", "list", "delete", "patch"]
   # `pods/log` es un subrecurso de RBAC DISTINTO de `pods` -- el rule de
   # arriba no lo cubre. Sin este, K8sService.getPodLogs() (usado por
   # PodLifecycleService tras cada runCode, src/pod-lifecycle/
