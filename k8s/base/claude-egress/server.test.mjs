@@ -1,4 +1,9 @@
 import assert from 'node:assert/strict';
+import { spawn } from 'node:child_process';
+import { mkdtempSync, symlinkSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import net from 'node:net';
 import { after, describe, it } from 'node:test';
 import { createProxy, isBlockedAddress } from './server.mjs';
@@ -225,6 +230,69 @@ describe('proxy CONNECT', () => {
     assert.match(all, /bytesUp/);
     assert.doesNotMatch(all, /TOKEN-SECRETO|sk-ant/);
     await ctx.stop();
+  });
+});
+
+describe('arranque como programa', () => {
+  const server = fileURLToPath(new URL('./server.mjs', import.meta.url));
+
+  /** Arranca `node <script>` y devuelve cuando escucha (o falla con lo que salió). */
+  async function startAndProbe(script) {
+    const port = 39000 + Math.floor(Math.random() * 500);
+    const child = spawn('node', [script], {
+      env: { ...process.env, PORT: String(port), ALLOWED_HOSTS: 'api.anthropic.com' },
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+    let output = '';
+    child.stdout.on('data', (chunk) => { output += chunk; });
+    child.stderr.on('data', (chunk) => { output += chunk; });
+    const exited = new Promise((resolve) => child.once('exit', (code) => resolve(code)));
+    try {
+      const listening = await Promise.race([
+        new Promise((resolve) => {
+          const timer = setInterval(() => {
+            if (output.includes('"event":"listening"')) { clearInterval(timer); resolve(true); }
+          }, 50);
+        }),
+        exited.then(() => false),
+        new Promise((resolve) => setTimeout(() => resolve(false), 5000)),
+      ]);
+      // Y de verdad acepta conexiones.
+      let accepts = false;
+      if (listening) {
+        accepts = await new Promise((resolve) => {
+          const socket = net.connect(port, '127.0.0.1', () => { socket.destroy(); resolve(true); });
+          socket.on('error', () => resolve(false));
+        });
+      }
+      return { listening, accepts, output };
+    } finally {
+      child.kill();
+    }
+  }
+
+  it('directo: escucha y acepta conexiones', async () => {
+    const result = await startAndProbe(server);
+    assert.equal(result.listening, true, result.output);
+    assert.equal(result.accepts, true);
+  });
+
+  it('por un enlace simbólico (cómo lo monta un ConfigMap): escucha igual (regresión del CrashLoop del primer despliegue)', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'claude-egress-'));
+    const link = join(dir, 'server.mjs');
+    symlinkSync(server, link);
+    const result = await startAndProbe(link);
+    assert.equal(result.listening, true, result.output);
+    assert.equal(result.accepts, true);
+  });
+
+  it('importarlo (como hacen las pruebas) NO arranca ningún servidor', async () => {
+    const child = spawn('node', ['-e', `import('${server}').then(() => setTimeout(() => process.exit(0), 300))`], { stdio: ['ignore', 'pipe', 'pipe'] });
+    let output = '';
+    child.stdout.on('data', (chunk) => { output += chunk; });
+    const code = await new Promise((resolve) => child.once('exit', resolve));
+    assert.equal(code, 0);
+    assert.doesNotMatch(output, /listening/);
   });
 });
 

@@ -9,7 +9,8 @@
 import dns from 'node:dns/promises';
 import http from 'node:http';
 import net from 'node:net';
-import { pathToFileURL } from 'node:url';
+import { realpathSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 
 const TARGET = /^([a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+):(\d{1,5})$/i;
 
@@ -163,7 +164,22 @@ export function createProxy(options) {
 }
 
 // Arranque: solo si se ejecuta directamente (no al importarlo desde las pruebas).
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+// Se compara la ruta REAL: un ConfigMap monta el archivo como enlace simbólico
+// (/app/server.mjs -> ..data/server.mjs), y `import.meta.url` ya viene resuelto;
+// comparar contra `argv[1]` tal cual hacía que el proceso terminara sin escuchar
+// (CrashLoopBackOff con código 0 en el primer despliegue, 2026-09-30).
+function isMain() {
+  try {
+    return (
+      Boolean(process.argv[1]) &&
+      realpathSync(process.argv[1]) === realpathSync(fileURLToPath(import.meta.url))
+    );
+  } catch {
+    return false;
+  }
+}
+
+if (isMain()) {
   const allowedHosts = new Set(
     (process.env.ALLOWED_HOSTS ?? 'api.anthropic.com')
       .split(',')
