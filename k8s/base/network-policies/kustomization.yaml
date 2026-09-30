@@ -6,4 +6,5 @@ resources:
   - jin-executor.yaml
   - agents-sandbox.yaml
   - registry-proxy.yaml
+  - claude-egress.yaml
   - observability.yaml
