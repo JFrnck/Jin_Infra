@@ -40,10 +40,12 @@ spec:
           env:
             - name: PORT
               value: "3128"
-            # Se ajusta tras la primera prueba real (qué dominios pide Claude Code
-            # con CLAUDE_CODE_OAUTH_TOKEN): más vale empezar corto.
+            # Ajustada con la primera prueba real (2026-09-30): Claude Code también
+            # pide platform.claude.com (el proxy lo rechazó y `claude` dio
+            # ERR_PROXY_TUNNEL). Más vale seguir corto: agregar solo lo que el log
+            # del proxy muestre rechazado.
             - name: ALLOWED_HOSTS
-              value: "api.anthropic.com,claude.ai,console.anthropic.com"
+              value: "api.anthropic.com,claude.ai,console.anthropic.com,platform.claude.com"
             - name: MAX_TUNNELS
               value: "20"
             - name: MAX_LIFETIME_SECONDS
