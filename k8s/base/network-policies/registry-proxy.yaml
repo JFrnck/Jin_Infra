@@ -1,5 +1,5 @@
-# Proxy de npm (ADR 0016): solo recibe de las sesiones de terminal y solo sale
-# al registro de npm (443) y a DNS.
+# Proxy de npm (ADR 0016): solo recibe de las sesiones de terminal y de los pods
+# de servicio con jin.io/npm=enabled, y solo sale al registro de npm (443) y a DNS.
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -32,6 +32,16 @@ spec:
           podSelector:
             matchLabels:
               jin.io/type: terminal
+        # Pods de servicio (demos con backend, 2026-10-02): SOLO los que el
+        # Executor marca con jin.io/npm=enabled por pedido aprobado (template
+        # "node"); el resto de los servicios sigue sin llegar a Verdaccio.
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: agents-sandbox
+          podSelector:
+            matchLabels:
+              jin.io/type: service
+              jin.io/npm: enabled
       ports:
         - protocol: TCP
           port: 4873
