@@ -1,0 +1,10 @@
+# Proxy de salida del correo (Brevo) para apps de agents-sandbox: misma imagen y
+# código que claude-egress (ADR 0017), con ALLOWED_HOSTS=api.brevo.com. Sin root ni
+# capabilities: cumple `restricted`.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: mail-egress
+  labels:
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/warn: restricted

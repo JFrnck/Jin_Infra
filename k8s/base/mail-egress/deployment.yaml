@@ -1,0 +1,85 @@
+# Proxy de salida del correo: el ÚNICO camino a internet de las apps de
+# agents-sandbox que el owner marca con `jin.io/mail-egress=enabled`, y solo hacia
+# api.brevo.com:443. Túnel TCP (HTTP CONNECT) que NO descifra el tráfico: no ve la
+# API key ni el contenido de los correos. El código vive en un ConfigMap.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mail-egress
+  namespace: mail-egress
+  labels:
+    app.kubernetes.io/name: mail-egress
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: mail-egress
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: mail-egress
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: proxy
+          # Pinneada (nunca `latest`), multi-arch (la VM es ARM64): la misma que
+          # claude-egress, ya está en el nodo.
+          image: docker.io/library/node:22-alpine
+          command: ["node", "/app/server.mjs"]
+          env:
+            - name: PORT
+              value: "3128"
+            - name: ALLOWED_HOSTS
+              value: "api.brevo.com"
+            - name: MAX_TUNNELS
+              value: "5"
+            # Un envío dura segundos: no hace falta dejar túneles largos.
+            - name: MAX_LIFETIME_SECONDS
+              value: "60"
+            - name: IDLE_TIMEOUT_SECONDS
+              value: "30"
+          ports:
+            - name: proxy
+              containerPort: 3128
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          readinessProbe:
+            tcpSocket:
+              port: proxy
+            initialDelaySeconds: 3
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: proxy
+            initialDelaySeconds: 10
+            periodSeconds: 20
+          volumeMounts:
+            - name: code
+              mountPath: /app
+              readOnly: true
+          resources:
+            requests:
+              cpu: 10m
+              memory: 48Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+      volumes:
+        - name: code
+          configMap:
+            name: mail-egress-code

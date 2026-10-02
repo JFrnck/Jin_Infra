@@ -1,0 +1,110 @@
+# Aislamiento del proxy de correo (mismo esquema que claude-egress): default-deny,
+# entra solo desde apps de agents-sandbox con el label explícito, y sale solo a DNS
+# y a HTTPS público (nunca a direcciones internas; el propio proxy también las rechaza).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all
+  namespace: mail-egress
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-from-mail-apps
+  namespace: mail-egress
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: mail-egress
+  policyTypes:
+    - Ingress
+  ingress:
+    # Los DOS labels: ser una app de servicio (label que pone el Executor) y haber
+    # sido habilitada para enviar correo (`jin.io/mail-egress`, decisión del owner).
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: agents-sandbox
+          podSelector:
+            matchLabels:
+              jin.io/type: service
+              jin.io/mail-egress: enabled
+      ports:
+        - protocol: TCP
+          port: 3128
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-dns-egress
+  namespace: mail-egress
+spec:
+  podSelector: {}
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-https-public-egress
+  namespace: mail-egress
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: mail-egress
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except:
+              - 10.0.0.0/8
+              - 172.16.0.0/12
+              - 192.168.0.0/16
+              - 169.254.0.0/16
+              - 100.64.0.0/10
+      ports:
+        - protocol: TCP
+          port: 443
+---
+# Lado de agents-sandbox: la app habilitada puede llegar SOLO al proxy de correo
+# (se suma al default-deny + DNS que ya existen en el namespace).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-mail-egress-proxy
+  namespace: agents-sandbox
+spec:
+  podSelector:
+    matchLabels:
+      jin.io/type: service
+      jin.io/mail-egress: enabled
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: mail-egress
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: mail-egress
+      ports:
+        - protocol: TCP
+          port: 3128

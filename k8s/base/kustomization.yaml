@@ -7,6 +7,7 @@ resources:
   - executor
   - registry-proxy
   - claude-egress
+  - mail-egress
   - jin-core
   - jin-web
   - postgres
