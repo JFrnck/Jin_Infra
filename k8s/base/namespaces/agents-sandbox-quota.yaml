@@ -7,12 +7,18 @@ metadata:
   namespace: agents-sandbox
 spec:
   hard:
-    # 2000m/3Gi (antes 1000m/2Gi): un solo pod con límite 1000m llenaba la
+    # 3000m/6Gi (2026-10-02; antes 2000m/3Gi): las demos con base de datos
+    # (Redis/PostgreSQL/MongoDB como contenedor auxiliar, ADR 0018) suman hasta
+    # 192Mi-768Mi y 200m-500m de LÍMITE por demo encima de la app (1Gi/1000m); sin
+    # esto una demo con Mongo + una terminal ya no cabían. Los REQUESTS casi no
+    # cambian (la base pide 25m-75m) y siguen siendo lo que limita cuántos pods
+    # caben en el nodo (ver el comentario de `pods`). La VM tiene ~8,7Gi libres.
+    # Antes 2000m/3Gi (antes aún 1000m/2Gi): un solo pod con límite 1000m llenaba la
     # cuota. Con una sesión de terminal (ADR 0016) y un preview a la vez hace
     # falta el doble de techo. Sigue siendo techo de ráfaga, no reserva (los
     # requests no cambian: 250m por pod).
-    limits.cpu: "2000m"
-    limits.memory: 3Gi
+    limits.cpu: "3000m"
+    limits.memory: 6Gi
     # 3, no 4: cada pod pide 250m de CPU (LimitRange defaultRequest).
     # Allocatable 1750m (2 vCPU - system-reserved, 01-install-k3s.sh)
     # menos ~975m de requests fijos (workloads de este repo + Traefik +
