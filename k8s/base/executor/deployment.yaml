@@ -40,7 +40,7 @@ spec:
         - name: executor
           # Tag = SHA del commit en main publicado por el CI de
           # Jin_Executor (job "docker"). Actualizar en el próximo release real.
-          image: ghcr.io/jfrnck/jin-executor:2ed7c2bbc680c4e6d66010bb8a859e5e241d17c5
+          image: ghcr.io/jfrnck/jin-executor:befee3bb3e3edd4ad09b32449269e6ee56ffdbac
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
@@ -52,6 +52,12 @@ spec:
           env:
             - name: PORT
               value: "3001"
+            # Vida máxima de una demo (pod de servicio) desde que se creó: 7 días. El
+            # código del Executor ya lo permite desde 2026-10-02 (extend), pero el
+            # default de su esquema sigue siendo 24 h: sin esta variable una demo
+            # no puede pasar de 24 h y extendPreviewService no sirve de nada.
+            - name: PREVIEW_SERVICE_MAX_TTL_SECONDS
+              value: "604800"
             # Fase 8.1: no secretos -- ver Jin_Executor/src/config/env.schema.ts.
             - name: INFISICAL_ENABLED
               value: "true"
