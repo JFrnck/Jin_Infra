@@ -58,6 +58,12 @@ spec:
             # no puede pasar de 24 h y extendPreviewService no sirve de nada.
             - name: PREVIEW_SERVICE_MAX_TTL_SECONDS
               value: "604800"
+            # Secretos de demo que una demo puede pedir (secrets: ["brevo"]). Cada nombre es un
+            # Secret `demo-secret-<nombre>` en agents-sandbox que crea el OWNER con kubectl;
+            # el Executor no lo lee (no tiene permiso), solo lo referencia en el pod. Vacío =
+            # ninguna demo puede pedir secretos.
+            - name: PREVIEW_SERVICE_ALLOWED_CREDENTIALS
+              value: brevo
             # Fase 8.1: no secretos -- ver Jin_Executor/src/config/env.schema.ts.
             - name: INFISICAL_ENABLED
               value: "true"
