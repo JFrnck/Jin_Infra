@@ -61,6 +61,12 @@ rules:
   - apiGroups: [""]
     resources: ["persistentvolumeclaims"]
     verbs: ["create", "get", "list", "delete"]
+  # Variables de entorno por demo (ADR 0020, 2026-10-04): un Secret `demo-env-<id>` por demo,
+  # ligado al pod con ownerReference. SOLO create/patch/delete: el Executor escribe el valor
+  # pero NO puede leerlo de vuelta ni leer ningún otro Secret (sin get/list).
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["create", "patch", "delete"]
   - apiGroups: [""]
     resources: ["services"]
     verbs: ["create", "get", "list", "delete"]
