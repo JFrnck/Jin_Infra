@@ -62,7 +62,7 @@ spec:
             # Secret `demo-secret-<nombre>` en agents-sandbox que crea el OWNER con kubectl;
             # el Executor no lo lee (no tiene permiso), solo lo referencia en el pod. Vacío =
             # ninguna demo puede pedir secretos.
-            - name: PREVIEW_SERVICE_ALLOWED_SECRETS
+            - name: PREVIEW_SERVICE_ALLOWED_CREDENTIALS
               value: brevo
             # Fase 8.1: no secretos -- ver Jin_Executor/src/config/env.schema.ts.
             - name: INFISICAL_ENABLED
